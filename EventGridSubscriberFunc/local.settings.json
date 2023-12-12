@@ -1,0 +1,12 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+      "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+      "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+      "NamespaceEndpoint": "https://eosdomaineventsbus-poc.australiaeast-1.eventgrid.azure.net/",
+      "TopicName": "customisation",
+      "Subscription": "personalisation",
+      "EventBatchSize": 10,
+      "EventGridTopicKey": "{SECRET}"
+    }
+    }
