@@ -1,5 +1,5 @@
-﻿using Azure.Messaging;
-using Azure;
+﻿using Azure;
+using Azure.Messaging;
 using Azure.Messaging.EventGrid.Namespaces;
 using Microsoft.Extensions.Configuration;
 
@@ -16,34 +16,71 @@ namespace EventGridPublisher
 
             var config = builder.Build();
 
-            var namespaceEndpoint = config["NamespaceEndpoint"];
-            var topicName = config["TopicName"];
-            var eventType = config["EventType"];
-            var topicKey = config["EventGridTopicKey"]; // user secrets
+            var eventType = config["EventType"]!;
+            var namespaceEndpoint = config["NamespaceEndpoint"]!;
+            var eventBatchSize = Convert.ToInt32(config["EventBatchSize"]!);
+
+            while (true)
+            {
+                Console.WriteLine("Press any key to send events to topics. Press 'Esc' to exit.");
+                var key = Console.ReadKey(); // Wait for key press
+                if (key.Key == ConsoleKey.Escape) // Exit condition
+                {
+                    break;
+                }
+
+                Console.WriteLine("\nPublishing events...");
+
+                // publish to topic 1
+                await PublishTopicEventsAsync(namespaceEndpoint, config["TopicName1"]!, config["TopicKey1"]!, eventType, eventBatchSize);
+
+                // publish to topic 2
+                await PublishTopicEventsAsync(namespaceEndpoint, config["TopicName2"]!, config["TopicKey2"]!, eventType, eventBatchSize);
+
+                Console.WriteLine("Events published successfully.");
+            }
+
+            Console.WriteLine("Exiting application.");
+        }
+
+        private static async Task PublishTopicEventsAsync(string namespaceEndpoint, string topicName, string topicKey, string eventType, int batchSize)
+        {
+            var eventSource = topicName; // set event source to topic name (E.g. customisaiton, location etc.)
 
             // Construct the client using an Endpoint for a namespace as well as the access key
             // NOTE: You don't need the topicKey if using managed identity based connection
             var client = new EventGridClient(new Uri(namespaceEndpoint), new AzureKeyCredential(topicKey));
 
-            // Publish a single CloudEvent using a custom TestModel for the event data.
-            var @ev = new CloudEvent("employee_source", eventType, new TestModel { Name = "Bob", Age = 18 });
-            await client.PublishCloudEventAsync(topicName, ev);
 
-            // Publish a batch of CloudEvents.
-            await client.PublishCloudEventsAsync(
-                topicName,
-                new[] {
-                    new CloudEvent("employee_source", eventType, new TestModel { Name = "Tom", Age = 55 }),
-                    new CloudEvent("employee_source", eventType, new TestModel { Name = "Alice", Age = 25 })});
+            // Prepare a batch of 1000 CloudEvents
+            var events = new List<CloudEvent>();
+            for (int i = 0; i < batchSize; i++)
+            {
+                var name = GenerateRandomName();
+                var age = Random.Shared.Next(1, 101); // Age between 1 and 100
+                events.Add(new CloudEvent(eventSource, eventType, new TestModel { Name = name, Age = age }));
+            }
 
-            Console.WriteLine("Three events have been published to the topic. Press any key to end the application.");
-            Console.ReadKey();
+            // Publish the batch of CloudEvents
+            await client.PublishCloudEventsAsync(topicName, events);
+
+            Console.WriteLine($"{batchSize} events have been published to the topic '{topicName}'.");
         }
+
+        // Helper method to generate a random name
+        private static string GenerateRandomName()
+        {
+            int length = Random.Shared.Next(3, 13); // Name length between 3 and 12 characters
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[Random.Shared.Next(s.Length)]).ToArray());
+        }
+
     }
 
     public class TestModel
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public int Age { get; set; }
     }
 }

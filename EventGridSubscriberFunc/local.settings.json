@@ -1,12 +1,15 @@
 {
     "IsEncrypted": false,
-    "Values": {
-      "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-      "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-      "NamespaceEndpoint": "https://eosdomaineventsbus-poc.australiaeast-1.eventgrid.azure.net/",
-      "TopicName": "customisation",
-      "Subscription": "personalisation",
-      "EventBatchSize": 10,
-      "EventGridTopicKey": "{SECRET}"
-    }
-    }
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "NamespaceEndpoint": "https://eosdomaineventsbus-poc.australiaeast-1.eventgrid.azure.net/",
+    "TopicName1": "customisation",
+    "TopicName2": "location",
+    "TopicKey1": "{SECRET}",
+    "TopicKey2": "{SECRET}",
+    "Subscription": "personalisation",
+    "EventBatchSize": 100,
+    "MaxWaitTime":  "00:00:10"
+  }
+}
