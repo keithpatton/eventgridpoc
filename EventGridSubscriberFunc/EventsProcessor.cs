@@ -15,13 +15,13 @@ namespace EventGridSubscriberFunc
         private readonly string _subscription = config["Subscription"];
 
         [Function(nameof(CustomisationDomainEventsProcessor))]
-        public async Task CustomisationDomainEventsProcessor([TimerTrigger("0 */1 * * * *", RunOnStartup = true)] TimerInfo myTimer)
+        public async Task CustomisationDomainEventsProcessor([TimerTrigger("%PollingFrequency%", RunOnStartup = true)] TimerInfo myTimer)
         {
             await RunFunctionAsync(myTimer, config["TopicName1"], config["TopicKey1"]);
         }
 
         [Function(nameof(LocationDomainEventsProcessor))]
-        public async Task LocationDomainEventsProcessor([TimerTrigger("0 */1 * * * *", RunOnStartup = true)] TimerInfo myTimer)
+        public async Task LocationDomainEventsProcessor([TimerTrigger("%PollingFrequency%", RunOnStartup = true)] TimerInfo myTimer)
         {
             await RunFunctionAsync(myTimer, config["TopicName2"], config["TopicKey2"]);
         }

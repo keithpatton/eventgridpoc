@@ -10,6 +10,7 @@
     "TopicKey2": "{SECRET}",
     "Subscription": "personalisation",
     "EventBatchSize": 100,
-    "MaxWaitTime":  "00:00:10"
+    "MaxWaitTime": "00:00:10",
+    "PollingFrequency": "*/30 * * * * *"
   }
 }
