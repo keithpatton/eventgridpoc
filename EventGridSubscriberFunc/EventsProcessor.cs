@@ -51,6 +51,7 @@ namespace EventGridSubscriberFunc
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error occurred when running timer trigger function for {topicName}");
+                throw;
             }
         }
 
