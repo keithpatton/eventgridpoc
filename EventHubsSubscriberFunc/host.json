@@ -1,0 +1,34 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      },
+      "enableLiveMetricsFilters": true
+    }
+  }
+  //"eventHubs": {
+  //  "maxEventBatchSize": 100,
+  //  "minEventBatchSize": 25,
+  //  "maxWaitTime": "00:05:00",
+  //  "batchCheckpointFrequency": 1,
+  //  "prefetchCount": 300,
+  //  "transportType": "amqpWebSockets",
+  //  "webProxy": "https://proxyserver:8080",
+  //  "customEndpointAddress": "amqps://company.gateway.local",
+  //  "targetUnprocessedEventThreshold": 75,
+  //  "initialOffsetOptions": {
+  //    "type": "fromStart",
+  //    "enqueuedTimeUtc": ""
+  //  },
+  //  "clientRetryOptions": {
+  //    "mode": "exponential",
+  //    "tryTimeout": "00:01:00",
+  //    "delay": "00:00:00.80",
+  //    "maximumDelay": "00:01:00",
+  //    "maximumRetries": 3
+  //  }
+  //}
+}

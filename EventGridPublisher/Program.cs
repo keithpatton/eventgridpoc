@@ -51,8 +51,7 @@ namespace EventGridPublisher
             // NOTE: You don't need the topicKey if using managed identity based connection
             var client = new EventGridClient(new Uri(namespaceEndpoint), new AzureKeyCredential(topicKey));
 
-
-            // Prepare a batch of 1000 CloudEvents
+            // Prepare a batch of CloudEvents
             var events = new List<CloudEvent>();
             for (int i = 0; i < batchSize; i++)
             {
