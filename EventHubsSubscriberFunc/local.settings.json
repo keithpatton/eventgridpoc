@@ -6,6 +6,6 @@
     "NamespaceConnString": "{SECRET}",
     "TopicName1": "customisation",
     "TopicName2": "location",
-    "ConsumerGroup": "personalisation",
+    "ConsumerGroup": "personalisation"
   }
 }
