@@ -33,20 +33,10 @@ namespace EventGridSubscriberFunc
         {
             try
             {
-                _logger.LogInformation($"Timer trigger function for {topicName} started at: {DateTime.Now}");
-
-                if (myTimer.ScheduleStatus is not null)
-                {
-                    _logger.LogInformation($"Next timer schedule for {topicName} at: {myTimer.ScheduleStatus.Next}");
-                }
-
                 // NOTE: managed identity support is available in real world
                 var eventGridClient = new EventGridClient(new Uri(_namespaceEndpoint), new AzureKeyCredential(topicKey));
 
                 await ProcessEventsAsync(eventGridClient, topicName);
-
-                _logger.LogInformation($"Timer trigger function for {topicName} completed at: {DateTime.UtcNow}");
-
             } 
             catch (Exception ex)
             {
@@ -56,7 +46,7 @@ namespace EventGridSubscriberFunc
         }
 
         /// <summary>
-        /// processes all topic events in batches
+        /// processes all topic events in batches until there are no more
         /// </summary>
         private async Task ProcessEventsAsync(EventGridClient eventgridClient, string topicName)
         {

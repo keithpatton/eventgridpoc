@@ -30,21 +30,17 @@ namespace EventHubsSubscriberFunc
             // note: Unlike an Event Grid subscription a consumer group doesn't filter, the filtering must be done at the consumer end
             // This means all domain service events are received and the consumer must filter themselves, not ideal.
             var eventsList = events.Where(e => e.Properties["EventType"].ToString() == config["ConsumerGroup"]).ToList();
-
             try
             {
-                _logger.LogInformation($"Event Hubs trigger function for {topicName} started at: {DateTime.Now}");
+
 
                 foreach (EventData @event in eventsList)
                 {
-                    _logger.LogInformation("Event Body: {body}", @event.Body);
-                    _logger.LogInformation("Event Type: {eventType}", @event.Properties["EventType"]);
+                    _logger.LogDebug("Event Body: {body}", @event.Body);
+                    _logger.LogDebug("Event Type: {eventType}", @event.Properties["EventType"]);
 
                     // CUSTOM EVENT PROCESSING CODE HERE
                 }
-
-                _logger.LogInformation($"Event Hubs trigger function for {topicName} completed at: {DateTime.UtcNow}");
-
             }
             catch (Exception ex)
             {
