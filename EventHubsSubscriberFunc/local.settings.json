@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "NamespaceConnString": "{SECRET}",
+    "TopicName1": "customisation",
+    "TopicName2": "location",
+    "ConsumerGroup": "personalisation",
+  }
+}
