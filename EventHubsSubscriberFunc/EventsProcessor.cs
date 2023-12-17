@@ -40,6 +40,8 @@ namespace EventHubsSubscriberFunc
                     _logger.LogDebug("Event Type: {eventType}", @event.Properties["EventType"]);
 
                     // CUSTOM EVENT PROCESSING CODE HERE
+                    // Ensure idempotent, performant and resilient (polly retry?) to failure. 
+                    // Ultimately, no control over the checkpoint being moved on, so observability/logging critical
                 }
             }
             catch (Exception ex)

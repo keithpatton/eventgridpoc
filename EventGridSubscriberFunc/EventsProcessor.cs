@@ -87,7 +87,9 @@ namespace EventGridSubscriberFunc
             {
                 _logger.LogDebug(cloudEvent!.Data!.ToString());
 
-                // CUSTOM HANDLING CODE for each event
+                // CUSTOM HANDLING CODE for each event 
+                // Ensure idempoten, performant and resilient (polly retry?) to failure. 
+                // Ultimately, throwing here will cause event to go to dead letter queue if configured.
 
                 AcknowledgeResult acknowlegeResult = await eventgridClient.AcknowledgeCloudEventsAsync(topicName, _subscription, new AcknowledgeOptions(new List<string> { brokerProperties.LockToken }));
                 LogLockTokensResult(topicName, acknowlegeResult.SucceededLockTokens, acknowlegeResult.FailedLockTokens);
@@ -95,8 +97,8 @@ namespace EventGridSubscriberFunc
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing event: " + ex.Message);
-                ReleaseResult releaseResult = await eventgridClient.ReleaseCloudEventsAsync(topicName, _subscription, new ReleaseOptions(new List<string> { brokerProperties.LockToken }));
-                LogLockTokensResult(topicName, releaseResult.SucceededLockTokens, releaseResult.FailedLockTokens);
+                RejectResult rejectResult = await eventgridClient.RejectCloudEventsAsync(topicName, _subscription, new RejectOptions(new List<string> { brokerProperties.LockToken }));
+                LogLockTokensResult(topicName, rejectResult.SucceededLockTokens, rejectResult.FailedLockTokens);
             }
         }
 
