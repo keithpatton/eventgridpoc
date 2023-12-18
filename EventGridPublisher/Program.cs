@@ -22,7 +22,7 @@ namespace EventGridPublisher
 
             while (true)
             {
-                Console.WriteLine("Press any key to send events to topics. Press 'Esc' to exit.");
+                Console.WriteLine("Press any key to send events to event grid topics. Press 'Esc' to exit.");
                 var key = Console.ReadKey(); // Wait for key press
                 if (key.Key == ConsoleKey.Escape) // Exit condition
                 {

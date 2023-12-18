@@ -19,12 +19,11 @@ namespace EventHubsPublisher
             var eventType = config["EventType"]!;
             var namespaceConnString = config["NamespaceConnString"]!;
 
-            //Endpoint=sb://eosdomaineventsbus-poc.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abT5rdacu9TzwM/mLrZQs24X50Ce/w/ky+AEhJcaxSk=
             var eventBatchSize = Convert.ToInt32(config["EventBatchSize"]!);
 
             while (true)
             {
-                Console.WriteLine("Press any key to send events to topics. Press 'Esc' to exit.");
+                Console.WriteLine("Press any key to send events to event hubs/topics. Press 'Esc' to exit.");
                 var key = Console.ReadKey(); // Wait for key press
                 if (key.Key == ConsoleKey.Escape) // Exit condition
                 {
