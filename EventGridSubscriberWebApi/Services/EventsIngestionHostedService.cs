@@ -1,7 +1,7 @@
 ﻿namespace EventGridSubscriberWebApi.Services
 {
-    public class EventsProcessorHostedService (IConfiguration config,
-        ILogger<EventsProcessorHostedService> logger, EventsProcessorService eventProcessorService)
+    public class EventsIngestionHostedService (IConfiguration config,
+        ILogger<EventsIngestionHostedService> logger, EventsIngestionService eventIngestionService)
         : IHostedService, IDisposable
     {
         private Timer? _timer;
@@ -29,12 +29,12 @@
         {
             try
             {
-                await eventProcessorService.ProcessAsync();
-                logger.LogInformation("Successfully completed events processing.");
+                await eventIngestionService.IngestAsync();
+                logger.LogInformation("Successfully completed events ingestion.");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error occurred during events processing.");
+                logger.LogError(ex, "Error occurred during events ingestion.");
             }
         }
 

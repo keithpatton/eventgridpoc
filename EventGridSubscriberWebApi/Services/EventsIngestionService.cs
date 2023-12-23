@@ -4,92 +4,79 @@ using Azure.Messaging.EventGrid.Namespaces;
 
 namespace EventGridSubscriberWebApi.Services
 {
-    public class EventsProcessorService(ILoggerFactory loggerFactory, IConfiguration config, EventProcessorService eventProcessorService)
+    public class EventsIngestionService(ILoggerFactory loggerFactory, IConfiguration config, EventIngestionService eventIngestionService)
     {
-        private readonly ILogger _logger = loggerFactory.CreateLogger<EventsProcessorService>();
+        private readonly ILogger _logger = loggerFactory.CreateLogger<EventsIngestionService>();
         private readonly string _namespaceEndpoint = config["NamespaceEndpoint"]!;
         private readonly int _eventBatchSize = config.GetValue<int>("EventBatchSize");
         private readonly string _subscription = config["Subscription"]!;
 
         /// <summary>
-        /// Processes all events
+        /// Ingests all events
         /// </summary>
-        public async Task ProcessAsync()
+        public async Task IngestAsync()
         {
-            List<Task> tasks =
-            [
-                // customisation domain events
-                ProcessTopicEventsAsync(config["TopicName1"]!, config["TopicKey1"]!),
-                // location domain events
-                ProcessTopicEventsAsync(config["TopicName2"]!, config["TopicKey2"]!),
-            ];
+            var topicConfigs = config.GetSection("Topics").Get<List<TopicConfig>>()!;
+            var tasks = topicConfigs.Select(topic => IngestTopicEventsAsync(topic.Name, topic.Key)).ToList();
             await Task.WhenAll(tasks);
         }
 
         /// <summary>
-        /// Core function run for any topic events processor function
+        /// Ingests events for a topic
         /// </summary>
-        private async Task ProcessTopicEventsAsync(string topicName, string topicKey)
+        private async Task IngestTopicEventsAsync(string topicName, string topicKey)
         {
             try
             {
                 // NOTE: managed identity support is available
                 var eventGridClient = new EventGridClient(new Uri(_namespaceEndpoint), new AzureKeyCredential(topicKey));
-                await ProcessEventsAsync(eventGridClient, topicName);
+                bool eventsToIngest;
+                do
+                {
+                    var maxWaitTime = TimeSpan.Parse(config["MaxWaitTime"]!);
+                    _logger.LogInformation($"Events requested for {topicName}");
+                    ReceiveResult result = await eventGridClient.ReceiveCloudEventsAsync(topicName, _subscription, _eventBatchSize, maxWaitTime);
+
+                    eventsToIngest = result.Value.Any();
+                    if (eventsToIngest)
+                    {
+                        _logger.LogInformation($"{result.Value.Count} Events received for {topicName}");
+                        var ingestionTasks = result.Value.Select(detail => IngestEventAsync(eventGridClient, topicName, detail)).ToList();
+                        await Task.WhenAll(ingestionTasks);
+                        _logger.LogInformation($"{result.Value.Count} Events ingested for {topicName}");
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"No Events received for {topicName}");
+                    }
+                } while (eventsToIngest);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error occurred when running timer trigger function for {topicName}");
+                _logger.LogError(ex, $"Error occurred when ingesting topic events for {topicName}");
                 throw;
             }
         }
 
         /// <summary>
-        /// processes all topic events in batches until there are no more
-        /// </summary>
-        private async Task ProcessEventsAsync(EventGridClient eventgridClient, string topicName)
-        {
-            bool eventsToProcess;
-            do
-            {
-                var maxWaitTime = TimeSpan.Parse(config["MaxWaitTime"]!);
-                _logger.LogInformation($"Events requested for {topicName}");
-                ReceiveResult result = await eventgridClient.ReceiveCloudEventsAsync(topicName, _subscription, _eventBatchSize, maxWaitTime);
-
-                eventsToProcess = result.Value.Any();
-                if (eventsToProcess)
-                {
-                    _logger.LogInformation($"{result.Value.Count} Events received for {topicName}");
-                    var processingTasks = result.Value.Select(detail => ProcessEventAsync(eventgridClient, topicName, detail)).ToList();
-                    await Task.WhenAll(processingTasks);
-                    _logger.LogInformation($"{result.Value.Count} Events processed for {topicName}");
-                }
-                else
-                {
-                    _logger.LogInformation($"No Events received for {topicName}");
-                }
-            } while (eventsToProcess);
-        }
-
-        /// <summary>
-        /// Processes an individual event
+        /// Ingests an individual event
         /// </summary>
         /// <remarks>
         /// Note: Ensure idempotency, the same events might be delivered multiple times or in an unexpected order
         /// </remarks>
-        private async Task ProcessEventAsync(EventGridClient eventgridClient, string topicName, ReceiveDetails detail)
+        private async Task IngestEventAsync(EventGridClient eventgridClient, string topicName, ReceiveDetails detail)
         {
             CloudEvent cloudEvent = detail.Event;
             BrokerProperties brokerProperties = detail.BrokerProperties;
             try
             {
-                await eventProcessorService.ProcessAsync(cloudEvent);
+                await eventIngestionService.IngestAsync(cloudEvent);
                 AcknowledgeResult acknowlegeResult = await eventgridClient.AcknowledgeCloudEventsAsync(topicName, _subscription, new AcknowledgeOptions(new List<string> { brokerProperties.LockToken }));
                 LogLockTokensResult(topicName, acknowlegeResult.SucceededLockTokens, acknowlegeResult.FailedLockTokens);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error processing event: {ex.Message}");
+                _logger.LogError(ex, $"Error ingesting event: {ex.Message}");
                 ReleaseResult releaseResult = await eventgridClient.ReleaseCloudEventsAsync(topicName, _subscription, new ReleaseOptions(new List<string> { brokerProperties.LockToken }));
                 LogLockTokensResult(topicName, releaseResult.SucceededLockTokens, releaseResult.FailedLockTokens);
             }
@@ -116,6 +103,12 @@ namespace EventGridSubscriberWebApi.Services
             {
                 _logger.LogDebug($"{tokenName} Lock Token: {lockToken}");
             }
+        }
+
+        private record TopicConfig
+        {
+            public string Name { get; set; } = string.Empty;
+            public string Key { get; set; } = string.Empty;
         }
     }
 }

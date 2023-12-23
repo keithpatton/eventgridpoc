@@ -16,10 +16,10 @@ namespace EventGridSubscriberWebApi
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // Register the Events Processor
-            builder.Services.AddSingleton<EventsProcessorService>();
-            builder.Services.AddSingleton<EventProcessorService>();
-            builder.Services.AddHostedService<EventsProcessorHostedService>();
+            // Register the Events Ingestion Services
+            builder.Services.AddSingleton<EventsIngestionService>();
+            builder.Services.AddSingleton<EventIngestionService>();
+            builder.Services.AddHostedService<EventsIngestionHostedService>();
 
             var app = builder.Build();
 
