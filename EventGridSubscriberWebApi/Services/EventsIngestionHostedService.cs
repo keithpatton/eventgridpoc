@@ -5,15 +5,15 @@
         private Timer? _timer;
         private readonly IConfiguration _config;
         private readonly ILogger _logger;
-        private readonly EventsIngestionService _eventIngestionService;
+        private readonly EventsIngestionService _eventsIngestionService;
         private Task? _lastExecutionTask;
         private readonly object _lock = new();
 
-        public EventsIngestionHostedService(IConfiguration config, ILogger<EventsIngestionHostedService> logger, EventsIngestionService eventIngestionService)
+        public EventsIngestionHostedService(IConfiguration config, ILogger<EventsIngestionHostedService> logger, EventsIngestionService eventsIngestionService)
         {
             _config = config;
             _logger = logger;
-            _eventIngestionService = eventIngestionService;
+            _eventsIngestionService = eventsIngestionService;
         }
 
         public Task StartAsync(CancellationToken stoppingToken)
@@ -38,7 +38,7 @@
         {
             try
             {
-                await _eventIngestionService.IngestAsync();
+                await _eventsIngestionService.IngestAsync();
                 _logger.LogInformation("Successfully completed events ingestion.");
             }
             catch (Exception ex)
