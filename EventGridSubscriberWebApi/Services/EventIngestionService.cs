@@ -10,20 +10,19 @@ namespace EventGridSubscriberWebApi.Services
     /// </summary>
     public class EventIngestionService
     {
-        private readonly ILogger _logger;
-        private readonly TableClient _tableClient;
+        private readonly ILogger<EventIngestionService> _logger;     
+        private readonly IConfiguration _config;
+        private readonly Lazy<Task<TableClient>> _lazyTableClient;
 
-        public EventIngestionService(ILoggerFactory loggerFactory, IConfiguration config)
+        public EventIngestionService(ILogger<EventIngestionService> logger, IConfiguration config)
         {
-            _logger = loggerFactory.CreateLogger<EventIngestionService>();
-            string storageConnectionString = config["StorageConnString"]!;
-            string tableName = config["StorageTableName"]!;
-            _tableClient = new TableClient(storageConnectionString, tableName);
-            InitializeTable();
+            _logger = logger;
+            _config = config;
+            _lazyTableClient = new Lazy<Task<TableClient>>(InitializeTableClientAsync);
         }
 
         /// <summary>
-        /// Ingests a Cloud Event (using Table Storage)
+        /// Ingests a Cloud Event
         /// </summary>
         public async Task IngestAsync(CloudEvent cloudEvent)
         {
@@ -32,16 +31,16 @@ namespace EventGridSubscriberWebApi.Services
                 var formattedTime = cloudEvent.Time?.ToString("yyyyMMddHHmmssfffffff");
                 var entity = new CloudEventEntity
                 {
-                    PartitionKey = cloudEvent.Source,
-                    RowKey = $"{formattedTime}-{cloudEvent.Id}",
-                    EventData = cloudEvent.Data!.ToString()
+                    PartitionKey = cloudEvent.Source, // could be topic name
+                    RowKey = $"{formattedTime}-{cloudEvent.Id}", // allows for sorting if ordering is important
+                    EventData = cloudEvent.Data?.ToString() ?? string.Empty // core event data in a custom field
                 };
-                // resiliency is built into the table client
-                await _tableClient.AddEntityAsync(entity);
+                var tableClient = await _lazyTableClient.Value;
+                await tableClient.AddEntityAsync(entity);
             }
             catch (RequestFailedException ex) when (ex.Status == 409)
             {
-                // ignore duplicate events
+                // ignore duplicate events as these are expected from time to time
                 _logger.LogWarning("Duplicate CloudEvent detected and skipped.");
             }
             catch (Exception ex)
@@ -51,16 +50,22 @@ namespace EventGridSubscriberWebApi.Services
             }
         }
 
-        private async void InitializeTable()
+        private async Task<TableClient> InitializeTableClientAsync()
         {
+            string storageConnectionString = _config["StorageConnString"]!;
+            string tableName = _config["StorageTableName"]!;
+            var tableClient = new TableClient(storageConnectionString, tableName);
             try
             {
-                await _tableClient.CreateIfNotExistsAsync();
+                await tableClient.CreateIfNotExistsAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating Table Storage table.");
+                _logger.LogError(ex, $"Error creating Table Storage table {tableName}");
+                throw;
             }
+            return tableClient;
         }
+
     }
 }

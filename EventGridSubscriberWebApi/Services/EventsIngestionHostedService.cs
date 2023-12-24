@@ -1,16 +1,24 @@
 ﻿namespace EventGridSubscriberWebApi.Services
 {
-    public class EventsIngestionHostedService (IConfiguration config,
-        ILogger<EventsIngestionHostedService> logger, EventsIngestionService eventIngestionService)
-        : IHostedService, IDisposable
+    public class EventsIngestionHostedService : IHostedService, IDisposable
     {
         private Timer? _timer;
+        private readonly IConfiguration _config;
+        private readonly ILogger _logger;
+        private readonly EventsIngestionService _eventIngestionService;
         private Task? _lastExecutionTask;
         private readonly object _lock = new();
 
+        public EventsIngestionHostedService(IConfiguration config, ILogger<EventsIngestionHostedService> logger, EventsIngestionService eventIngestionService)
+        {
+            _config = config;
+            _logger = logger;
+            _eventIngestionService = eventIngestionService;
+        }
+
         public Task StartAsync(CancellationToken stoppingToken)
         {
-            TimeSpan interval = TimeSpan.Parse(config["PollingFrequency"]!);
+            TimeSpan interval = TimeSpan.Parse(_config["PollingFrequency"]!);
             _timer = new Timer(ExecuteTask, null, TimeSpan.Zero, interval);
             return Task.CompletedTask;
         }
@@ -19,6 +27,7 @@
         {
             lock (_lock)
             {
+                // check if work already in progress
                 if (_lastExecutionTask != null && !_lastExecutionTask.IsCompleted)
                     return;
                 _lastExecutionTask = DoWorkAsync();
@@ -29,12 +38,12 @@
         {
             try
             {
-                await eventIngestionService.IngestAsync();
-                logger.LogInformation("Successfully completed events ingestion.");
+                await _eventIngestionService.IngestAsync();
+                _logger.LogInformation("Successfully completed events ingestion.");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error occurred during events ingestion.");
+                _logger.LogError(ex, "Error occurred during events ingestion.");
             }
         }
 
