@@ -28,11 +28,14 @@ namespace EventGridSubscriberWebApi.Services
         {
             try
             {
+                // This code just adds the event to table storage
+                // this is where the event would be ingested and processed according to application need
+
                 var formattedTime = cloudEvent.Time?.ToString("yyyyMMddHHmmssfffffff");
                 var entity = new CloudEventEntity
                 {
                     PartitionKey = cloudEvent.Source, // could be topic name
-                    RowKey = $"{formattedTime}-{cloudEvent.Id}", // allows for sorting if ordering is important
+                    RowKey = $"{formattedTime}-{cloudEvent.Id}",
                     EventData = cloudEvent.Data?.ToString() ?? string.Empty // core event data in a custom field
                 };
                 var tableClient = await _lazyTableClient.Value;
