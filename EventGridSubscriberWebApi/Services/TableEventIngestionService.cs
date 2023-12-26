@@ -29,9 +29,6 @@ namespace EventGridSubscriberWebApi.Services
         {
             try
             {
-                // This code just adds the event to table storage
-                // this is where the event would be ingested and processed according to application need
-
                 var formattedTime = cloudEvent.Time?.ToString("yyyyMMddHHmmssfffffff");
                 var entity = new CloudEventTableEntity
                 {
