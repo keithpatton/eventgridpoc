@@ -1,6 +1,7 @@
 
 using EventGridSubscriberWebApi.Abstractions;
 using EventGridSubscriberWebApi.Services;
+using StackExchange.Redis;
 
 namespace EventGridSubscriberWebApi
 {
@@ -18,6 +19,15 @@ namespace EventGridSubscriberWebApi
             builder.Services.AddSwaggerGen();
 
             // Register the Events Ingestion Services
+            builder.Services.AddSingleton(serviceProvider =>
+            {
+                return new Lazy<ConnectionMultiplexer>(() =>
+                {
+                    var redisConnectionString = builder.Configuration["RedisConnString"]!;
+                    return ConnectionMultiplexer.Connect(redisConnectionString);
+                });
+            });
+            builder.Services.AddSingleton<IRedisLockService, RedisLockService>();
             builder.Services.AddSingleton<IEventsIngestionService,EventsIngestionService>();
             builder.Services.AddSingleton<IEventIngestionService,SqlEventIngestionService>();
             builder.Services.AddHostedService<EventsIngestionHostedService>();
