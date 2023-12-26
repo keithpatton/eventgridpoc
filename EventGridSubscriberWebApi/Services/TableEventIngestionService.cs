@@ -33,7 +33,7 @@ namespace EventGridSubscriberWebApi.Services
                 // this is where the event would be ingested and processed according to application need
 
                 var formattedTime = cloudEvent.Time?.ToString("yyyyMMddHHmmssfffffff");
-                var entity = new CloudEventEntity
+                var entity = new CloudEventTableEntity
                 {
                     PartitionKey = cloudEvent.Source, // could be topic name
                     RowKey = $"{formattedTime}-{cloudEvent.Id}",
@@ -69,6 +69,19 @@ namespace EventGridSubscriberWebApi.Services
                 throw;
             }
             return tableClient;
+        }
+
+        /// <summary>
+        /// Cloud Event Table Entity for Table Storage
+        /// </summary>
+        private record CloudEventTableEntity : ITableEntity
+        {
+            public string PartitionKey { get; set; } = string.Empty;
+            public string RowKey { get; set; } = string.Empty;
+            public DateTimeOffset? Timestamp { get; set; }
+            public ETag ETag { get; set; }
+            // custom field
+            public string EventData { get; set; } = string.Empty;
         }
 
     }
