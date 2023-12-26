@@ -1,15 +1,17 @@
-﻿namespace EventGridSubscriberWebApi.Services
+﻿using EventGridSubscriberWebApi.Abstractions;
+
+namespace EventGridSubscriberWebApi.Services
 {
     public class EventsIngestionHostedService : IHostedService, IDisposable
     {
         private Timer? _timer;
         private readonly IConfiguration _config;
         private readonly ILogger _logger;
-        private readonly EventsIngestionService _eventsIngestionService;
+        private readonly IEventsIngestionService _eventsIngestionService;
         private Task? _lastExecutionTask;
         private readonly object _lock = new();
 
-        public EventsIngestionHostedService(IConfiguration config, ILogger<EventsIngestionHostedService> logger, EventsIngestionService eventsIngestionService)
+        public EventsIngestionHostedService(IConfiguration config, ILogger<EventsIngestionHostedService> logger, IEventsIngestionService eventsIngestionService)
         {
             _config = config;
             _logger = logger;

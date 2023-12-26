@@ -1,10 +1,12 @@
 ﻿using Azure;
 using Azure.Messaging;
 using Azure.Messaging.EventGrid.Namespaces;
+using EventGridSubscriberWebApi.Abstractions;
 
 namespace EventGridSubscriberWebApi.Services
 {
-    public class EventsIngestionService(ILoggerFactory loggerFactory, IConfiguration config, EventIngestionService eventIngestionService)
+    public class EventsIngestionService(ILoggerFactory loggerFactory, IConfiguration config, IEventIngestionService eventIngestionService)
+        : IEventsIngestionService
     {
         private readonly ILogger _logger = loggerFactory.CreateLogger<EventsIngestionService>();
         private readonly string _namespaceEndpoint = config["NamespaceEndpoint"]!;

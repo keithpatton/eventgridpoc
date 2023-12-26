@@ -1,4 +1,5 @@
 
+using EventGridSubscriberWebApi.Abstractions;
 using EventGridSubscriberWebApi.Services;
 
 namespace EventGridSubscriberWebApi
@@ -17,8 +18,8 @@ namespace EventGridSubscriberWebApi
             builder.Services.AddSwaggerGen();
 
             // Register the Events Ingestion Services
-            builder.Services.AddSingleton<EventsIngestionService>();
-            builder.Services.AddSingleton<EventIngestionService>();
+            builder.Services.AddSingleton<IEventsIngestionService,EventsIngestionService>();
+            builder.Services.AddSingleton<IEventIngestionService,SqlEventIngestionService>();
             builder.Services.AddHostedService<EventsIngestionHostedService>();
 
             var app = builder.Build();

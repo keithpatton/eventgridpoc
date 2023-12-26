@@ -1,20 +1,21 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 using Azure.Messaging;
+using EventGridSubscriberWebApi.Abstractions;
 
 namespace EventGridSubscriberWebApi.Services
 {
 
     /// <summary>
-    /// Ingests an Event
+    /// Ingests an Event using Tabel Storage
     /// </summary>
-    public class EventIngestionService
+    public class TableEventIngestionService : IEventIngestionService
     {
-        private readonly ILogger<EventIngestionService> _logger;     
+        private readonly ILogger<TableEventIngestionService> _logger;     
         private readonly IConfiguration _config;
         private readonly Lazy<Task<TableClient>> _lazyTableClient;
 
-        public EventIngestionService(ILogger<EventIngestionService> logger, IConfiguration config)
+        public TableEventIngestionService(ILogger<TableEventIngestionService> logger, IConfiguration config)
         {
             _logger = logger;
             _config = config;
