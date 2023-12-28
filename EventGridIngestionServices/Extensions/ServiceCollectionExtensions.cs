@@ -16,7 +16,7 @@ namespace EventGridIngestionServices.Extensions
         /// <typeparam name="T">The type of the event ingestion service implementation. Must implement IEventIngestionService.</typeparam>
         /// <param name="services">The IServiceCollection to add services to.</param>
         /// <param name="eventsIngestionHostedServiceOptions">An optional action to configure the EventsIngestionHostedServiceOptions.</param>
-        /// <param name="eventsIngestionOptions">An optional action to configure the EventsIngestionServiceOptions.</param>
+        /// <param name="eventsIngestionServiceOptions">An optional action to configure the EventsIngestionServiceOptions.</param>
         /// <param name="redisLockServiceOptions">An optional action to configure the RedisLockServiceOptions.</param>
         /// <returns>The IServiceCollection for chaining.</returns>
         /// <remarks>
@@ -27,13 +27,13 @@ namespace EventGridIngestionServices.Extensions
         public static IServiceCollection AddEventsIngestion<T>(
             this IServiceCollection services,
             Action<EventsIngestionHostedServiceOptions>? eventsIngestionHostedServiceOptions = null,
-            Action<EventsIngestionServiceOptions>? eventsIngestionOptions = null,
+            Action<EventsIngestionServiceOptions>? eventsIngestionServiceOptions = null,
             Action<RedisLockServiceOptions>? redisLockServiceOptions = null) where T : class, IEventIngestionService
         {
             // ensure options configured
             services.Configure<EventsIngestionServiceOptions>(opts =>
             {
-                eventsIngestionOptions?.Invoke(opts);
+                eventsIngestionServiceOptions?.Invoke(opts);
             });
             services.Configure<EventsIngestionHostedServiceOptions>(opts =>
             {

@@ -24,7 +24,7 @@ namespace EventGridSubscriberWebApi
             builder.Services.Configure<SqlEventIngestionServiceOptions>(builder.Configuration.GetSection("SqlEventIngestionService"));
             builder.Services.AddEventsIngestion<SqlEventIngestionService>(
                 eventsIngestionHostedServiceOptions: opts => builder.Configuration.GetSection("EventsIngestionHostedService").Bind(opts),
-                eventsIngestionOptions: opts => builder.Configuration.GetSection("EventsIngestionService").Bind(opts),
+                eventsIngestionServiceOptions: opts => builder.Configuration.GetSection("EventsIngestionService").Bind(opts),
                 redisLockServiceOptions: opts => builder.Configuration.GetSection("RedisLockService").Bind(opts));
 
             var app = builder.Build();
