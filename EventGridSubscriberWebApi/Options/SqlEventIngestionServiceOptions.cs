@@ -1,4 +1,4 @@
-﻿namespace EventGridSubscriberWebApi.Options
+﻿namespace EventGridSubscriiberWebApi.Options
 {
 
     /// <summary>

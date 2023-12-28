@@ -1,4 +1,4 @@
-﻿namespace EventGridSubscriberWebApi.Options
+﻿namespace EventGridIngestionServices.Options
 {
     /// <summary>
     /// Configuration options for RedisLockService.

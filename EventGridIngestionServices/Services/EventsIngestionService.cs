@@ -1,22 +1,41 @@
 ﻿using Azure;
 using Azure.Messaging;
 using Azure.Messaging.EventGrid.Namespaces;
-using EventGridSubscriberWebApi.Abstractions;
-using EventGridSubscriberWebApi.Options;
+using EventGridIngestionServices.Abstractions;
+using EventGridIngestionServices.Options;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace EventGridSubscriberWebApi.Services
+namespace EventGridIngestionServices
 {
-    public class EventsIngestionService(ILoggerFactory loggerFactory, 
-        IOptions<EventsIngestionServiceOptions> optionsAccessor, IEventIngestionService eventIngestionService)
-        : IEventsIngestionService
+
+    /// <summary>
+    /// Service responsible for ingesting events from Azure Event Grid.
+    /// </summary>
+    public class EventsIngestionService : IEventsIngestionService
     {
-        private readonly EventsIngestionServiceOptions _options = optionsAccessor.Value;
-        private readonly ILogger _logger = loggerFactory.CreateLogger<EventsIngestionService>();
+        private readonly EventsIngestionServiceOptions _options;
+        private readonly ILogger _logger;
+        private readonly IEventIngestionService _eventIngestionService;
 
         /// <summary>
-        /// Ingests all events
+        /// Initializes a new instance of the <see cref="EventsIngestionService"/> class.
         /// </summary>
+        /// <param name="loggerFactory">The factory to create an instance of <see cref="ILogger"/>.</param>
+        /// <param name="optionsAccessor">The configuration options for the service.</param>
+        /// <param name="eventIngestionService">The service to process each individual event.</param>
+        public EventsIngestionService(ILoggerFactory loggerFactory,
+            IOptions<EventsIngestionServiceOptions> optionsAccessor, IEventIngestionService eventIngestionService)
+        {
+            _options = optionsAccessor.Value;
+            _logger = loggerFactory.CreateLogger<EventsIngestionService>();
+            _eventIngestionService = eventIngestionService;
+        }
+
+        /// <summary>
+        /// Asynchronously ingests events from configured topics.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation of ingesting events.</returns>
         public async Task IngestAsync()
         {
             var topicConfigs = _options.Topics;
@@ -25,8 +44,11 @@ namespace EventGridSubscriberWebApi.Services
         }
 
         /// <summary>
-        /// Ingests events for a topic
+        /// Ingests events for a specific topic.
         /// </summary>
+        /// <param name="topicName">The name of the topic to ingest events from.</param>
+        /// <param name="topicKey">The access key for the topic.</param>
+        /// <returns>A task that represents the asynchronous operation of ingesting events for a topic.</returns>
         private async Task IngestTopicEventsAsync(string topicName, string topicKey)
         {
             try
@@ -62,10 +84,14 @@ namespace EventGridSubscriberWebApi.Services
         }
 
         /// <summary>
-        /// Ingests an individual event
+        /// Ingests an individual event.
         /// </summary>
+        /// <param name="eventgridClient">The EventGridClient to use for acknowledging the event.</param>
+        /// <param name="topicName">The name of the topic from which the event originates.</param>
+        /// <param name="detail">The details of the event to ingest.</param>
+        /// <returns>A task that represents the asynchronous operation of ingesting an individual event.</returns>
         /// <remarks>
-        /// Note: Ensure idempotency, the same events might be delivered multiple times or in an unexpected order
+        /// Ensure idempotency in this method, as the same events might be delivered multiple times or in an unexpected order.
         /// </remarks>
         private async Task IngestEventAsync(EventGridClient eventgridClient, string topicName, ReceiveDetails detail)
         {
@@ -73,7 +99,7 @@ namespace EventGridSubscriberWebApi.Services
             BrokerProperties brokerProperties = detail.BrokerProperties;
             try
             {
-                await eventIngestionService.IngestAsync(cloudEvent);
+                await _eventIngestionService.IngestAsync(cloudEvent);
                 AcknowledgeResult acknowlegeResult = await eventgridClient.AcknowledgeCloudEventsAsync(topicName, _options.Subscription, new AcknowledgeOptions(new List<string> { brokerProperties.LockToken }));
                 LogLockTokensResult(topicName, acknowlegeResult.SucceededLockTokens, acknowlegeResult.FailedLockTokens);
             }
@@ -86,8 +112,11 @@ namespace EventGridSubscriberWebApi.Services
         }
 
         /// <summary>
-        /// Log summary for lock tokens
+        /// Logs the result summary for lock tokens.
         /// </summary>
+        /// <param name="tokenName">The name associated with the lock tokens.</param>
+        /// <param name="succeededLockTokens">A list of lock tokens that succeeded.</param>
+        /// <param name="failedLockTokens">A list of lock tokens that failed.</param>
         private void LogLockTokensResult(string tokenName, IReadOnlyList<string> succeededLockTokens, IReadOnlyList<FailedLockToken> failedLockTokens)
         {
             if (failedLockTokens.Count > 0)

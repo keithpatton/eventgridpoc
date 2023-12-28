@@ -1,9 +1,9 @@
 
-using EventGridSubscriberWebApi.Abstractions;
-using EventGridSubscriberWebApi.Options;
-using EventGridSubscriberWebApi.Services;
+using EventGridIngestionServices;
+using EventGridIngestionServices.Extensions;
+using EventGridSubscriiberWebApi.Options;
+using EventGridSubscriiberWebApi.Services;
 using Microsoft.Extensions.Configuration;
-using StackExchange.Redis;
 
 namespace EventGridSubscriberWebApi
 {
@@ -20,16 +20,12 @@ namespace EventGridSubscriberWebApi
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // Register the Events Ingestion Services
-            var config = builder.Configuration;
-            builder.Services.Configure<EventsIngestionHostedServiceOptions>(config.GetSection("EventsIngestionHostedService"));
-            builder.Services.Configure<EventsIngestionServiceOptions>(config.GetSection("EventsIngestionService"));
-            builder.Services.Configure<RedisLockServiceOptions>(config.GetSection("RedisLockService"));
-            builder.Services.Configure<SqlEventIngestionServiceOptions>(config.GetSection("SqlEventIngestionService"));
-            builder.Services.AddHostedService<EventsIngestionHostedService>();
-            builder.Services.AddSingleton<IEventsIngestionService, EventsIngestionService>();
-            builder.Services.AddSingleton<IRedisLockService, RedisLockService>();         
-            builder.Services.AddSingleton<IEventIngestionService,SqlEventIngestionService>();        
+            // Events Ingestion Services
+            builder.Services.Configure<SqlEventIngestionServiceOptions>(builder.Configuration.GetSection("SqlEventIngestionService"));
+            builder.Services.AddEventsIngestion<SqlEventIngestionService>(
+                eventsIngestionOptions: opts => builder.Configuration.GetSection("EventsIngestionService").Bind(opts),
+                eventsIngestionHostedServiceOptions: opts => builder.Configuration.GetSection("EventsIngestionHostedService").Bind(opts),
+                redisLockServiceOptions: opts => builder.Configuration.GetSection("RedisLockService").Bind(opts));
 
             var app = builder.Build();
 

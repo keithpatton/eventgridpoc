@@ -1,4 +1,4 @@
-﻿namespace EventGridSubscriberWebApi.Options
+﻿namespace EventGridIngestionServices.Options
 {
     /// <summary>
     /// Represents the configuration options for the EventsIngestionService.

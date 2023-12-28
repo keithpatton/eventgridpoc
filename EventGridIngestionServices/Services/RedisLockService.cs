@@ -1,15 +1,16 @@
-﻿using EventGridSubscriberWebApi.Abstractions;
-using EventGridSubscriberWebApi.Options;
+﻿using EventGridIngestionServices.Abstractions;
+using EventGridIngestionServices.Options;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Wrap;
 using StackExchange.Redis;
 
-namespace EventGridSubscriberWebApi.Services
+namespace EventGridIngestionServices
 {
 
     /// <summary>
-    /// Provides a resilient lock using Redis
+    /// Implements a distributed lock mechanism using Redis, with added resiliency features like retries and circuit breaker.
     /// </summary>
     public class RedisLockService : IRedisLockService
     {
@@ -19,6 +20,12 @@ namespace EventGridSubscriberWebApi.Services
         private readonly ILogger<RedisLockService> _logger;
         private readonly RedisLockServiceOptions _options;
 
+        /// <summary>
+        /// Initializes a new instance of the RedisLockService class.
+        /// </summary>
+        /// <param name="optionsAccessor">Configuration options for Redis connection and resiliency settings.</param>
+        /// <param name="logger">Logger for logging messages and errors.</param>
+
         public RedisLockService(IOptions<RedisLockServiceOptions> optionsAccessor, ILogger<RedisLockService> logger)
         {
             _options = optionsAccessor.Value;
@@ -26,6 +33,13 @@ namespace EventGridSubscriberWebApi.Services
             _logger = logger;
             _resiliencePolicy = InitialiseResiliencyPolicies();
         }
+
+        /// <summary>
+        /// Tries to acquire a distributed lock with the given key and expiry time.
+        /// </summary>
+        /// <param name="lockKey">The key representing the lock.</param>
+        /// <param name="expiryTime">The duration for which the lock should be held.</param>
+        /// <returns>True if the lock was successfully acquired, false otherwise.</returns>
 
         public async Task<bool> TryAcquireLockAsync(string lockKey, TimeSpan expiryTime)
         {
@@ -43,6 +57,11 @@ namespace EventGridSubscriberWebApi.Services
             }
         }
 
+        /// <summary>
+        /// Releases a previously acquired lock with the given key.
+        /// </summary>
+        /// <param name="lockKey">The key representing the lock to be released.</param>
+
         public async Task ReleaseLockAsync(string lockKey)
         {
             try
@@ -57,6 +76,12 @@ namespace EventGridSubscriberWebApi.Services
                 _logger.LogError(ex, "Failed to release lock.");
             }
         }
+
+
+        /// <summary>
+        /// Initializes resilience policies including retry and circuit breaker for handling Redis operations.
+        /// </summary>
+        /// <returns>An AsyncPolicyWrap configured with retry and circuit breaker policies.</returns>
 
         private AsyncPolicyWrap InitialiseResiliencyPolicies()
         {

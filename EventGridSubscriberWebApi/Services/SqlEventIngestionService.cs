@@ -1,12 +1,12 @@
 ﻿using Azure.Messaging;
 using Dapper;
-using EventGridSubscriberWebApi.Abstractions;
-using EventGridSubscriberWebApi.Options;
+using EventGridIngestionServices.Abstractions;
+using EventGridSubscriiberWebApi.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 using System.Data;
 
-namespace EventGridSubscriberWebApi.Services
+namespace EventGridSubscriiberWebApi.Services
 {
 
     /// <summary>
