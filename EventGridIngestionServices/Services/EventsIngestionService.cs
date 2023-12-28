@@ -39,17 +39,20 @@ namespace EventGridIngestionServices
         public async Task IngestAsync()
         {
             var topicConfigs = _options.Topics;
-            var tasks = topicConfigs.Select(topic => IngestTopicEventsAsync(topic.Name, topic.Key)).ToList();
+            var tasks = topicConfigs.SelectMany(topic =>
+                topic.Subscriptions.Select(subscription =>
+                    IngestTopicEventsAsync(topic.Name, subscription, topic.Key))).ToList();
             await Task.WhenAll(tasks);
         }
 
         /// <summary>
-        /// Ingests events for a specific topic.
+        /// Ingests events for a specific topic and subscription
         /// </summary>
         /// <param name="topicName">The name of the topic to ingest events from.</param>
+        /// <param name="subscription">The name of the subscription to ingest events from.</param>
         /// <param name="topicKey">The access key for the topic.</param>
         /// <returns>A task that represents the asynchronous operation of ingesting events for a topic.</returns>
-        private async Task IngestTopicEventsAsync(string topicName, string topicKey)
+        private async Task IngestTopicEventsAsync(string topicName, string subscription, string topicKey)
         {
             try
             {
@@ -60,13 +63,13 @@ namespace EventGridIngestionServices
                 {
                     var maxWaitTime = _options.MaxWaitTime;
                     _logger.LogInformation($"Events requested for {topicName}");
-                    ReceiveResult result = await eventGridClient.ReceiveCloudEventsAsync(topicName, _options.Subscription, _options.EventBatchSize, maxWaitTime);
+                    ReceiveResult result = await eventGridClient.ReceiveCloudEventsAsync(topicName, subscription, _options.EventBatchSize, maxWaitTime);
 
                     eventsToIngest = result.Value.Any();
                     if (eventsToIngest)
                     {
                         _logger.LogInformation($"{result.Value.Count} Events received for {topicName}");
-                        var ingestionTasks = result.Value.Select(detail => IngestEventAsync(eventGridClient, topicName, detail)).ToList();
+                        var ingestionTasks = result.Value.Select(detail => IngestEventAsync(eventGridClient, topicName, subscription, detail)).ToList();
                         await Task.WhenAll(ingestionTasks);
                         _logger.LogInformation($"{result.Value.Count} Events ingested for {topicName}");
                     }
@@ -89,24 +92,25 @@ namespace EventGridIngestionServices
         /// <param name="eventgridClient">The EventGridClient to use for acknowledging the event.</param>
         /// <param name="topicName">The name of the topic from which the event originates.</param>
         /// <param name="detail">The details of the event to ingest.</param>
+        /// <param name="detail">The name of the subscription from which the event was received.</param>
         /// <returns>A task that represents the asynchronous operation of ingesting an individual event.</returns>
         /// <remarks>
         /// Ensure idempotency in this method, as the same events might be delivered multiple times or in an unexpected order.
         /// </remarks>
-        private async Task IngestEventAsync(EventGridClient eventgridClient, string topicName, ReceiveDetails detail)
+        private async Task IngestEventAsync(EventGridClient eventgridClient, string topicName, string subscription, ReceiveDetails detail)
         {
             CloudEvent cloudEvent = detail.Event;
             BrokerProperties brokerProperties = detail.BrokerProperties;
             try
             {
                 await _eventIngestionService.IngestAsync(cloudEvent);
-                AcknowledgeResult acknowlegeResult = await eventgridClient.AcknowledgeCloudEventsAsync(topicName, _options.Subscription, new AcknowledgeOptions(new List<string> { brokerProperties.LockToken }));
+                AcknowledgeResult acknowlegeResult = await eventgridClient.AcknowledgeCloudEventsAsync(topicName, subscription, new AcknowledgeOptions(new List<string> { brokerProperties.LockToken }));
                 LogLockTokensResult(topicName, acknowlegeResult.SucceededLockTokens, acknowlegeResult.FailedLockTokens);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error ingesting event: {ex.Message}");
-                ReleaseResult releaseResult = await eventgridClient.ReleaseCloudEventsAsync(topicName, _options.Subscription, new ReleaseOptions(new List<string> { brokerProperties.LockToken }));
+                ReleaseResult releaseResult = await eventgridClient.ReleaseCloudEventsAsync(topicName, subscription, new ReleaseOptions(new List<string> { brokerProperties.LockToken }));
                 LogLockTokensResult(topicName, releaseResult.SucceededLockTokens, releaseResult.FailedLockTokens);
             }
         }

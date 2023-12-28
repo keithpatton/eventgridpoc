@@ -22,14 +22,6 @@
         public int EventBatchSize { get; set; } = 100;
 
         /// <summary>
-        /// Gets or sets the subscription name for the Event Grid.
-        /// </summary>
-        /// <remarks>
-        /// Specifies the name of the subscription for event consumption.
-        /// </remarks>
-        public string Subscription { get; set; } = string.Empty;
-
-        /// <summary>
         /// Gets or sets the maximum wait time for events to be available.
         /// </summary>
         /// <remarks>
@@ -66,5 +58,16 @@
         /// The authentication key used for accessing the specified topic.
         /// </remarks>
         public string Key { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the list of subscriptions associated with the Event Grid topic.
+        /// </summary>
+        /// <remarks>
+        /// Contains a list of subscription identifiers for the topic. Each subscription will be used to 
+        /// separately subscribe to and ingest events from the Event Grid. This allows for handling 
+        /// multiple subscriptions for a single topic.
+        /// </remarks>
+        public List<string> Subscriptions { get; set; } = []; 
+
     }
 }
