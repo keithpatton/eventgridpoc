@@ -1,6 +1,8 @@
 
 using EventGridSubscriberWebApi.Abstractions;
+using EventGridSubscriberWebApi.Options;
 using EventGridSubscriberWebApi.Services;
+using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 
 namespace EventGridSubscriberWebApi
@@ -19,18 +21,15 @@ namespace EventGridSubscriberWebApi
             builder.Services.AddSwaggerGen();
 
             // Register the Events Ingestion Services
-            builder.Services.AddSingleton(serviceProvider =>
-            {
-                return new Lazy<ConnectionMultiplexer>(() =>
-                {
-                    var redisConnectionString = builder.Configuration["RedisConnString"]!;
-                    return ConnectionMultiplexer.Connect(redisConnectionString);
-                });
-            });
-            builder.Services.AddSingleton<IRedisLockService, RedisLockService>();
-            builder.Services.AddSingleton<IEventsIngestionService,EventsIngestionService>();
-            builder.Services.AddSingleton<IEventIngestionService,SqlEventIngestionService>();
+            var config = builder.Configuration;
+            builder.Services.Configure<EventsIngestionHostedServiceOptions>(config.GetSection("EventsIngestionHostedService"));
+            builder.Services.Configure<EventsIngestionServiceOptions>(config.GetSection("EventsIngestionService"));
+            builder.Services.Configure<RedisLockServiceOptions>(config.GetSection("RedisLockService"));
+            builder.Services.Configure<SqlEventIngestionServiceOptions>(config.GetSection("SqlEventIngestionService"));
             builder.Services.AddHostedService<EventsIngestionHostedService>();
+            builder.Services.AddSingleton<IEventsIngestionService, EventsIngestionService>();
+            builder.Services.AddSingleton<IRedisLockService, RedisLockService>();         
+            builder.Services.AddSingleton<IEventIngestionService,SqlEventIngestionService>();        
 
             var app = builder.Build();
 

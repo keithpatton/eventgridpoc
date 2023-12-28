@@ -1,7 +1,9 @@
 ﻿using Azure.Messaging;
 using Dapper;
 using EventGridSubscriberWebApi.Abstractions;
+using EventGridSubscriberWebApi.Options;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
 using System.Data;
 
 namespace EventGridSubscriberWebApi.Services
@@ -13,13 +15,13 @@ namespace EventGridSubscriberWebApi.Services
     public class SqlEventIngestionService : IEventIngestionService
     {
         private readonly ILogger<SqlEventIngestionService> _logger;
-        private readonly IConfiguration _config;
+        private readonly SqlEventIngestionServiceOptions _options;
         private readonly Lazy<Task<IDbConnection>> _lazySqlConnection;
 
-        public SqlEventIngestionService(ILogger<SqlEventIngestionService> logger, IConfiguration config)
+        public SqlEventIngestionService(IOptions<SqlEventIngestionServiceOptions> optionsAccessor, ILogger<SqlEventIngestionService> logger)
         {
             _logger = logger;
-            _config = config;
+            _options = optionsAccessor.Value;
             _lazySqlConnection = new Lazy<Task<IDbConnection>>(InitializeSqlDatabaseAsync);
         }
 
@@ -65,7 +67,7 @@ namespace EventGridSubscriberWebApi.Services
 
         private async Task<IDbConnection> InitializeSqlDatabaseAsync()
         {
-            var connectionString = _config["SqlConnString"];
+            var connectionString = _options.ConnectionString;
             var connection = new SqlConnection(connectionString);
 
             try

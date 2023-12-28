@@ -1,4 +1,6 @@
 ﻿using EventGridSubscriberWebApi.Abstractions;
+using EventGridSubscriberWebApi.Options;
+using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Wrap;
 using StackExchange.Redis;
@@ -15,48 +17,14 @@ namespace EventGridSubscriberWebApi.Services
         private IDatabase _database => _lazyConnection.Value.GetDatabase();
         private readonly AsyncPolicyWrap _resiliencePolicy;
         private readonly ILogger<RedisLockService> _logger;
+        private readonly RedisLockServiceOptions _options;
 
-        public RedisLockService(Lazy<ConnectionMultiplexer> lazyConnection, ILogger<RedisLockService> logger)
+        public RedisLockService(IOptions<RedisLockServiceOptions> optionsAccessor, ILogger<RedisLockService> logger)
         {
-            _lazyConnection = lazyConnection;
+            _options = optionsAccessor.Value;
+            _lazyConnection = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(_options.ConnectionString));
             _logger = logger;
-
-            // retry for Redis specific exceptions only coming from the Redis Cache Layer
-            var retryPolicy = Policy
-                .Handle<RedisException>()
-                .Or<RedisTimeoutException>()
-                .WaitAndRetryAsync(
-                    3, // Number of retries
-                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), // Exponential back-off
-                    onRetry: (exception, timeSpan, retryCount, context) =>
-                    {
-                        _logger.LogWarning(exception, $"Retry Attempt {retryCount}");
-                    }
-                );
-
-            var circuitBreakerPolicy = Policy
-                .Handle<RedisException>()
-                .Or<RedisTimeoutException>()
-                .AdvancedCircuitBreakerAsync(
-                    failureThreshold: 0.1, // 10% failure rate
-                    samplingDuration: TimeSpan.FromMinutes(15), // Over a 15-minute period
-                    minimumThroughput: 100, // Minimum number of actions within the sampling period
-                    durationOfBreak: TimeSpan.FromMinutes(5), // Circuit stays open for 5 minutes
-                    onBreak: (exception, timespan) =>
-                    {
-                        _logger.LogWarning($"Circuit broken due to {exception.GetType().Name}");
-                    },
-                    onReset: () =>
-                    {
-                        _logger.LogInformation("Circuit reset");
-                    },
-                    onHalfOpen: () =>
-                    {
-                        _logger.LogInformation("Circuit is half-open");
-                    }
-                );
-
-            _resiliencePolicy = circuitBreakerPolicy.WrapAsync(retryPolicy);
+            _resiliencePolicy = InitialiseResiliencyPolicies();
         }
 
         public async Task<bool> TryAcquireLockAsync(string lockKey, TimeSpan expiryTime)
@@ -88,6 +56,45 @@ namespace EventGridSubscriberWebApi.Services
             {
                 _logger.LogError(ex, "Failed to release lock.");
             }
+        }
+
+        private AsyncPolicyWrap InitialiseResiliencyPolicies()
+        {
+            var retryPolicy = Policy
+                .Handle<RedisException>()
+                .Or<RedisTimeoutException>()
+                .WaitAndRetryAsync(
+                    retryCount: _options.RetryCount, 
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(_options.RetryDelay.TotalSeconds, retryAttempt)), // Exponential back-off
+                    onRetry: (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning(exception, $"Retry Attempt {retryCount}");
+                    }
+                );
+
+            var circuitBreakerPolicy = Policy
+                .Handle<RedisException>()
+                .Or<RedisTimeoutException>()
+                .AdvancedCircuitBreakerAsync(
+                    failureThreshold: _options.CircuitBreakerFailureThreshold,
+                    samplingDuration: _options.CircuitBreakerSamplingDuration,
+                    minimumThroughput: _options.CircuitBreakerMinimumThroughput,
+                    durationOfBreak: _options.CircuitBreakerSamplingDuration,
+                    onBreak: (exception, timespan) =>
+                    {
+                        _logger.LogWarning($"Circuit broken due to {exception.GetType().Name}");
+                    },
+                    onReset: () =>
+                    {
+                        _logger.LogInformation("Circuit reset");
+                    },
+                    onHalfOpen: () =>
+                    {
+                        _logger.LogInformation("Circuit is half-open");
+                    }
+                );
+
+            return circuitBreakerPolicy.WrapAsync(retryPolicy);
         }
 
     }

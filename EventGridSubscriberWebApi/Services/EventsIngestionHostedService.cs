@@ -1,4 +1,6 @@
 ﻿using EventGridSubscriberWebApi.Abstractions;
+using EventGridSubscriberWebApi.Options;
+using Microsoft.Extensions.Options;
 
 namespace EventGridSubscriberWebApi.Services
 {
@@ -6,16 +8,17 @@ namespace EventGridSubscriberWebApi.Services
     {
         private Timer? _timer;
         private Task? _lastExecutionTask;
-        private readonly IConfiguration _config;
         private readonly ILogger _logger;
         private readonly IEventsIngestionService _eventsIngestionService;      
         private readonly object _lock = new();
         private readonly IRedisLockService _redisLockService;
+        private readonly EventsIngestionHostedServiceOptions _options;
 
-        public EventsIngestionHostedService(IConfiguration config, ILogger<EventsIngestionHostedService> logger, 
+        public EventsIngestionHostedService(IOptions<EventsIngestionHostedServiceOptions> optionsAccessor, 
+            ILogger<EventsIngestionHostedService> logger, 
             IEventsIngestionService eventsIngestionService, IRedisLockService redisLockService)
         {
-            _config = config;
+            _options = optionsAccessor.Value;
             _logger = logger;
             _eventsIngestionService = eventsIngestionService;
             _redisLockService = redisLockService;
@@ -23,7 +26,7 @@ namespace EventGridSubscriberWebApi.Services
 
         public Task StartAsync(CancellationToken stoppingToken)
         {
-            TimeSpan interval = TimeSpan.Parse(_config["PollingFrequency"]!);
+            TimeSpan interval = _options.PollingFrequency;
             _timer = new Timer(ExecuteTask, null, TimeSpan.Zero, interval);
             return Task.CompletedTask;
         }
@@ -46,7 +49,7 @@ namespace EventGridSubscriberWebApi.Services
             bool lockAcquired = false;
             try
             {
-                lockAcquired = await _redisLockService.TryAcquireLockAsync(nameof(EventsIngestionHostedService), TimeSpan.FromMinutes(5));
+                lockAcquired = await _redisLockService.TryAcquireLockAsync(_options.RedisLockKey, _options.RedisLockTimeout);
                 if (!lockAcquired)
                 {
                     _logger.LogInformation("Unable to acquire distributed lock for events ingestion, skipping this run");
@@ -63,7 +66,7 @@ namespace EventGridSubscriberWebApi.Services
             {
                 if (lockAcquired)
                 { 
-                    await _redisLockService.ReleaseLockAsync(nameof(EventsIngestionHostedService));
+                    await _redisLockService.ReleaseLockAsync(_options.RedisLockKey);
                 }
             }
         }

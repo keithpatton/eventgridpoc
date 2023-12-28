@@ -2,23 +2,24 @@
 using Azure.Messaging;
 using Azure.Messaging.EventGrid.Namespaces;
 using EventGridSubscriberWebApi.Abstractions;
+using EventGridSubscriberWebApi.Options;
+using Microsoft.Extensions.Options;
 
 namespace EventGridSubscriberWebApi.Services
 {
-    public class EventsIngestionService(ILoggerFactory loggerFactory, IConfiguration config, IEventIngestionService eventIngestionService)
+    public class EventsIngestionService(ILoggerFactory loggerFactory, 
+        IOptions<EventsIngestionServiceOptions> optionsAccessor, IEventIngestionService eventIngestionService)
         : IEventsIngestionService
     {
+        private readonly EventsIngestionServiceOptions _options = optionsAccessor.Value;
         private readonly ILogger _logger = loggerFactory.CreateLogger<EventsIngestionService>();
-        private readonly string _namespaceEndpoint = config["NamespaceEndpoint"]!;
-        private readonly int _eventBatchSize = config.GetValue<int>("EventBatchSize");
-        private readonly string _subscription = config["Subscription"]!;
 
         /// <summary>
         /// Ingests all events
         /// </summary>
         public async Task IngestAsync()
         {
-            var topicConfigs = config.GetSection("Topics").Get<List<TopicConfig>>()!;
+            var topicConfigs = _options.Topics;
             var tasks = topicConfigs.Select(topic => IngestTopicEventsAsync(topic.Name, topic.Key)).ToList();
             await Task.WhenAll(tasks);
         }
@@ -31,13 +32,13 @@ namespace EventGridSubscriberWebApi.Services
             try
             {
                 // NOTE: managed identity support is available
-                var eventGridClient = new EventGridClient(new Uri(_namespaceEndpoint), new AzureKeyCredential(topicKey));
+                var eventGridClient = new EventGridClient(new Uri(_options.NamespaceEndpoint), new AzureKeyCredential(topicKey));
                 bool eventsToIngest;
                 do
                 {
-                    var maxWaitTime = TimeSpan.Parse(config["MaxWaitTime"]!);
+                    var maxWaitTime = _options.MaxWaitTime;
                     _logger.LogInformation($"Events requested for {topicName}");
-                    ReceiveResult result = await eventGridClient.ReceiveCloudEventsAsync(topicName, _subscription, _eventBatchSize, maxWaitTime);
+                    ReceiveResult result = await eventGridClient.ReceiveCloudEventsAsync(topicName, _options.Subscription, _options.EventBatchSize, maxWaitTime);
 
                     eventsToIngest = result.Value.Any();
                     if (eventsToIngest)
@@ -73,13 +74,13 @@ namespace EventGridSubscriberWebApi.Services
             try
             {
                 await eventIngestionService.IngestAsync(cloudEvent);
-                AcknowledgeResult acknowlegeResult = await eventgridClient.AcknowledgeCloudEventsAsync(topicName, _subscription, new AcknowledgeOptions(new List<string> { brokerProperties.LockToken }));
+                AcknowledgeResult acknowlegeResult = await eventgridClient.AcknowledgeCloudEventsAsync(topicName, _options.Subscription, new AcknowledgeOptions(new List<string> { brokerProperties.LockToken }));
                 LogLockTokensResult(topicName, acknowlegeResult.SucceededLockTokens, acknowlegeResult.FailedLockTokens);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error ingesting event: {ex.Message}");
-                ReleaseResult releaseResult = await eventgridClient.ReleaseCloudEventsAsync(topicName, _subscription, new ReleaseOptions(new List<string> { brokerProperties.LockToken }));
+                ReleaseResult releaseResult = await eventgridClient.ReleaseCloudEventsAsync(topicName, _options.Subscription, new ReleaseOptions(new List<string> { brokerProperties.LockToken }));
                 LogLockTokensResult(topicName, releaseResult.SucceededLockTokens, releaseResult.FailedLockTokens);
             }
         }
@@ -107,10 +108,5 @@ namespace EventGridSubscriberWebApi.Services
             }
         }
 
-        private record TopicConfig
-        {
-            public string Name { get; set; } = string.Empty;
-            public string Key { get; set; } = string.Empty;
-        }
     }
 }
