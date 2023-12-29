@@ -13,7 +13,7 @@ namespace EventGridIngestionServices
     /// <summary>
     /// Service responsible for ingesting events from Azure Event Grid.
     /// </summary>
-    public class EventsIngestionService : IEventsIngestionService
+    public class EventGridIngestionService : IEventsIngestionService
     {
         private readonly EventsIngestionServiceOptions _options;
         private readonly ILogger _logger;
@@ -25,11 +25,11 @@ namespace EventGridIngestionServices
         /// <param name="loggerFactory">The factory to create an instance of <see cref="ILogger"/>.</param>
         /// <param name="optionsAccessor">The configuration options for the service.</param>
         /// <param name="eventIngestionService">The service to process each individual event.</param>
-        public EventsIngestionService(ILoggerFactory loggerFactory,
+        public EventGridIngestionService(ILoggerFactory loggerFactory,
             IOptions<EventsIngestionServiceOptions> optionsAccessor, IEventIngestionService eventIngestionService)
         {
             _options = optionsAccessor.Value;
-            _logger = loggerFactory.CreateLogger<EventsIngestionService>();
+            _logger = loggerFactory.CreateLogger<EventGridIngestionService>();
             _eventIngestionService = eventIngestionService;
         }
 

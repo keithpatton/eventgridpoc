@@ -46,7 +46,7 @@ namespace EventGridIngestionServices.Extensions
 
             // ensure services registered
             services.AddHostedService<EventsIngestionHostedService>();
-            services.AddSingleton<IEventsIngestionService, EventsIngestionService>();
+            services.AddSingleton<IEventsIngestionService, EventGridIngestionService>();
             services.AddSingleton<IEventIngestionService, T>();
             services.AddSingleton<IRedisLockService, RedisLockService>();
 
