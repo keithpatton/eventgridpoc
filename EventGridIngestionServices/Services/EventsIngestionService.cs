@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Azure.Identity;
 using Azure.Messaging;
 using Azure.Messaging.EventGrid.Namespaces;
 using EventGridIngestionServices.Abstractions;
@@ -56,8 +57,7 @@ namespace EventGridIngestionServices
         {
             try
             {
-                // NOTE: managed identity support is available
-                var eventGridClient = new EventGridClient(new Uri(_options.NamespaceEndpoint), new AzureKeyCredential(topicKey));
+                var eventGridClient = CreateEventGridClient(topicKey);
                 bool eventsToIngest;
                 do
                 {
@@ -139,6 +139,36 @@ namespace EventGridIngestionServices
             {
                 _logger.LogDebug($"{tokenName} Lock Token: {lockToken}");
             }
+        }
+
+        /// <summary>
+        /// Creates an EventGridClient instance for interacting with Azure Event Grid.
+        /// </summary>
+        /// <param name="topicKey">The access key for the Event Grid topic. If null, DefaultAzureCredential is used for authentication.</param>
+        /// <returns>
+        /// An EventGridClient instance configured with the appropriate credentials. If a topicKey is provided,
+        /// an AzureKeyCredential is used for authentication. Otherwise, DefaultAzureCredential is used, 
+        /// which can handle various authentication scenarios (like Managed Identity or development environment credentials).
+        /// </returns>
+        /// <remarks>
+        /// This method abstracts the creation of the EventGridClient, handling different authentication methods based on
+        /// the presence of a topicKey. It allows seamless switching between key-based authentication for scenarios where
+        /// the key is available and Azure AD-based authentication (using DefaultAzureCredential) in environments like Azure
+        /// where Managed Identities can be leveraged.
+        /// </remarks>
+
+        private EventGridClient CreateEventGridClient(string topicKey)
+        {
+            EventGridClient eventGridClient;
+            if (topicKey != null)
+            {
+                eventGridClient = new EventGridClient(new Uri(_options.NamespaceEndpoint), new AzureKeyCredential(topicKey));
+            }
+            else
+            {
+                eventGridClient = new EventGridClient(new Uri(_options.NamespaceEndpoint), new DefaultAzureCredential());
+            }
+            return eventGridClient;
         }
 
     }

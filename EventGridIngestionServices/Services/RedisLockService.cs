@@ -1,4 +1,5 @@
-﻿using EventGridIngestionServices.Abstractions;
+﻿using Azure.Identity;
+using EventGridIngestionServices.Abstractions;
 using EventGridIngestionServices.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -29,9 +30,25 @@ namespace EventGridIngestionServices
         public RedisLockService(IOptions<RedisLockServiceOptions> optionsAccessor, ILogger<RedisLockService> logger)
         {
             _options = optionsAccessor.Value;
-            _lazyConnection = new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(_options.ConnectionString));
+            _lazyConnection = new Lazy<ConnectionMultiplexer>(() => InitConnection());
             _logger = logger;
             _resiliencePolicy = InitialiseResiliencyPolicies();
+        }
+
+        private ConnectionMultiplexer InitConnection()
+        {
+            var configurationOptions = ConfigurationOptions.Parse($"{_options.Host}:{_options.Port}");
+            configurationOptions.AbortOnConnectFail = false;
+            configurationOptions.Ssl = true;
+            if (!string.IsNullOrWhiteSpace(_options.PrincipalId))
+            {
+                configurationOptions.ConfigureForAzureWithTokenCredentialAsync(_options.PrincipalId, new DefaultAzureCredential()).GetAwaiter().GetResult();
+            }
+            else
+            {
+                configurationOptions.Password = _options.Password;
+            }
+            return ConnectionMultiplexer.Connect(configurationOptions);
         }
 
         /// <summary>

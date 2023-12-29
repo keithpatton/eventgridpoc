@@ -6,12 +6,37 @@
     public class RedisLockServiceOptions
     {
         /// <summary>
-        /// Gets or sets the Redis connection string.
+        /// Gets or sets the Redis host.
         /// </summary>
         /// <remarks>
-        /// The connection string is required to connect to the Redis server.
+        /// The host is required to connect to the Redis server.
         /// </remarks>
-        public string ConnectionString { get; set; } = string.Empty;
+        public string Host { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the port used to connect to Redis.
+        /// </summary>
+        /// <remarks>
+        /// Defaults to 6380.
+        /// </remarks>
+        public int Port { get; set; } = 6380;
+
+        /// <summary>
+        /// Gets or sets the password to connect to Redis Server.
+        /// </summary>
+        /// <remarks>
+        /// This value is required if PrincipalId is not set.
+        /// </remarks>
+        public string Password { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the principal id of the client application.
+        /// </summary>
+        /// <remarks>
+        /// A managed identity based connection is used when this value is supplied (password is ignored).
+        /// </remarks>
+        public string PrincipalId { get; set; } = string.Empty;
+
 
         /// <summary>
         /// Gets or sets the number of retry attempts for Redis operations.
