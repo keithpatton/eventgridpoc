@@ -4,7 +4,6 @@ using EventGridIngestionServices.Abstractions;
 using EventGridSubscriiberWebApi.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
-using System.Data;
 
 namespace EventGridSubscriiberWebApi.Services
 {
@@ -16,21 +15,29 @@ namespace EventGridSubscriiberWebApi.Services
     {
         private readonly ILogger<SqlEventIngestionService> _logger;
         private readonly SqlEventIngestionServiceOptions _options;
-        private readonly Lazy<Task<IDbConnection>> _lazySqlConnection;
+        private readonly Lazy<bool> _databaseInitialised;
 
         public SqlEventIngestionService(IOptions<SqlEventIngestionServiceOptions> optionsAccessor, ILogger<SqlEventIngestionService> logger)
         {
             _logger = logger;
             _options = optionsAccessor.Value;
-            _lazySqlConnection = new Lazy<Task<IDbConnection>>(InitializeSqlDatabaseAsync);
+            _databaseInitialised = new Lazy<bool>(InitializeSqlDatabase);
         }
 
         public async Task IngestAsync(CloudEvent cloudEvent)
         {
             try
             {
+                if (!_databaseInitialised.Value)
+                {
+                    _logger.LogWarning("Database not initialised, unable to ingest event");
+                    return;
+                };
+
                 var sqlCheck = "SELECT COUNT(1) FROM Events WHERE EventId = @EventId";
-                var connection = await _lazySqlConnection.Value;
+                using var connection = new SqlConnection(_options.ConnectionString);
+                connection.Open();
+
                 var exists = await connection.ExecuteScalarAsync<bool>(sqlCheck, new { EventId = cloudEvent.Id });
 
                 if (exists)
@@ -55,7 +62,6 @@ namespace EventGridSubscriiberWebApi.Services
                     EventType = cloudEvent.Type,
                     EventData = cloudEvent.Data?.ToString() ?? string.Empty
                 };
-
                 await connection.ExecuteAsync(sqlInsert, parameters);
             }
             catch (Exception ex)
@@ -65,31 +71,35 @@ namespace EventGridSubscriiberWebApi.Services
             }
         }
 
-        private async Task<IDbConnection> InitializeSqlDatabaseAsync()
+        private bool InitializeSqlDatabase()
         {
             var connectionString = _options.ConnectionString;
             var connection = new SqlConnection(connectionString);
 
             try
             {
-                await connection.OpenAsync();
+                _logger.LogInformation("connecting");
+                connection.Open();
+                _logger.LogInformation("connected");
                 var createTableSql = @"
                     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Events' and xtype='U')
                     CREATE TABLE Events (
-                        EventId UNIQUEIDENTIFIER  PRIMARY KEY,
+                        Id INT IDENTITY(1,1) PRIMARY KEY,
+                        EventId UNIQUEIDENTIFIER NOT NULL,
                         EventTime DATETIME2,
                         EventSource NVARCHAR(256),
                         EventType NVARCHAR(256),
-                        EventData NVARCHAR(MAX)
+                        CONSTRAINT UQ_EventId UNIQUE (EventId)
                     )";
-                await connection.ExecuteAsync(createTableSql);
+                connection.Execute(createTableSql);
+                 
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error initializing SQL Database.");
                 throw;
             }
-            return connection;
+            return true;
         }
     }
 }
