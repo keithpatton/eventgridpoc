@@ -1,6 +1,5 @@
 ﻿using Azure;
 using Azure.Identity;
-using Azure.Messaging;
 using Azure.Messaging.EventGrid.Namespaces;
 using EventIngestionServices.Abstractions;
 using EventIngestionServices.Options;
@@ -39,20 +38,21 @@ namespace EventIngestionServices
         /// <returns>A task that represents the asynchronous operation of ingesting events.</returns>
         public async Task IngestAsync()
         {
-            var topicConfigs = _options.Topics;
-            var tasks = topicConfigs.SelectMany(topic =>
-                topic.Subscriptions.Select(subscription =>
-                    IngestTopicEventsAsync(topic.Name, subscription, topic.Key))).ToList();
-            await Task.WhenAll(tasks);
+            var topicSubscriptionIngestionTasks = _options.Topics.SelectMany(topic => topic.Subscriptions.Select(subscription =>
+                IngestTopicEventsAsync(topic.Name, subscription, topic.Key))).ToList();
+            await Task.WhenAll(topicSubscriptionIngestionTasks);
         }
 
         /// <summary>
-        /// Ingests events for a specific topic and subscription
+        /// Ingests events for a specific Azure Event Grid topic and subscription.
         /// </summary>
         /// <param name="topicName">The name of the topic to ingest events from.</param>
         /// <param name="subscription">The name of the subscription to ingest events from.</param>
         /// <param name="topicKey">The access key for the topic.</param>
-        /// <returns>A task that represents the asynchronous operation of ingesting events for a topic.</returns>
+        /// <returns>A task representing the asynchronous operation of ingesting events for a topi and subscription.</returns>
+        /// <remarks>
+        /// Ingests events from a given topic and subscription, acknowledging successful ingestions and releasing failed ones.
+        /// </remarks>
         private async Task IngestTopicEventsAsync(string topicName, string subscription, string topicKey)
         {
             try
@@ -64,18 +64,14 @@ namespace EventIngestionServices
                     var maxWaitTime = _options.MaxWaitTime;
                     _logger.LogInformation($"Events requested for {topicName}");
                     ReceiveResult result = await eventGridClient.ReceiveCloudEventsAsync(topicName, subscription, _options.EventBatchSize, maxWaitTime);
-
                     eventsToIngest = result.Value.Any();
+                    _logger.LogInformation($"{result.Value.Count} Events received for {topicName}");
                     if (eventsToIngest)
                     {
                         _logger.LogInformation($"{result.Value.Count} Events received for {topicName}");
-                        var ingestionTasks = result.Value.Select(detail => IngestEventAsync(eventGridClient, topicName, subscription, detail)).ToList();
-                        await Task.WhenAll(ingestionTasks);
-                        _logger.LogInformation($"{result.Value.Count} Events ingested for {topicName}");
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"No Events received for {topicName}");
+                        var eventIngestionTasks = result.Value.Select(IngestEventAsync);
+                        var eventIngestionResults = await Task.WhenAll(eventIngestionTasks);
+                        await ProcessEventIngestionResults(eventGridClient, topicName, subscription, eventIngestionResults);
                     }
                 } while (eventsToIngest);
             }
@@ -89,38 +85,58 @@ namespace EventIngestionServices
         /// <summary>
         /// Ingests an individual event.
         /// </summary>
-        /// <param name="eventgridClient">The EventGridClient to use for acknowledging the event.</param>
-        /// <param name="topicName">The name of the topic from which the event originates.</param>
         /// <param name="detail">The details of the event to ingest.</param>
-        /// <param name="detail">The name of the subscription from which the event was received.</param>
-        /// <returns>A task that represents the asynchronous operation of ingesting an individual event.</returns>
+        /// <returns>A task representing the asynchronous operation of ingesting an individual event.</returns>
         /// <remarks>
-        /// Ensure idempotency in this method, as the same events might be delivered multiple times or in an unexpected order.
+        /// Processes a single event, handling any exceptions that occur during ingestion.
+        /// Idempotency required as the same event might be delivered multiple times.
         /// </remarks>
-        private async Task IngestEventAsync(EventGridClient eventgridClient, string topicName, string subscription, ReceiveDetails detail)
+        private async Task<EventIngestionResult> IngestEventAsync(ReceiveDetails detail)
         {
-            CloudEvent cloudEvent = detail.Event;
-            BrokerProperties brokerProperties = detail.BrokerProperties;
             try
             {
-                await _eventIngestionService.IngestAsync(cloudEvent);
-                AcknowledgeResult acknowlegeResult = await eventgridClient.AcknowledgeCloudEventsAsync(topicName, subscription, new AcknowledgeOptions(new List<string> { brokerProperties.LockToken }));
-                LogLockTokensResult(topicName, acknowlegeResult.SucceededLockTokens, acknowlegeResult.FailedLockTokens);
+                await _eventIngestionService.IngestAsync(cloudEvent: detail.Event);
+                return new EventIngestionResult(true, detail.BrokerProperties.LockToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error ingesting event: {ex.Message}");
-                ReleaseResult releaseResult = await eventgridClient.ReleaseCloudEventsAsync(topicName, subscription, new ReleaseOptions(new List<string> { brokerProperties.LockToken }));
+                return new EventIngestionResult(false, detail.BrokerProperties.LockToken);
+            }
+        }
+
+        /// <summary>
+        /// Processes the results of event ingestion, acknowledging successful ingestions and releasing failed ones.
+        /// </summary>
+        /// <param name="eventGridClient">The EventGridClient used for acknowledging or releasing events.</param>
+        /// <param name="topicName">The name of the topic associated with the events.</param>
+        /// <param name="subscription">The name of the subscription associated with the events.</param>
+        /// <param name="eventIngestionResults">The results of the event ingestion attempts.</param>
+        /// <returns>A task representing the asynchronous operation of processing the ingestion results.</returns>
+        private async Task ProcessEventIngestionResults(EventGridClient eventGridClient, string topicName, string subscription, EventIngestionResult[] eventIngestionResults)
+        {
+            var successTokens = eventIngestionResults.Where(result => result.Success).Select(result => result.LockToken).ToList();
+            var failedTokens = eventIngestionResults.Where(result => !result.Success).Select(result => result.LockToken).ToList();
+            if (successTokens.Count > 0)
+            {
+                AcknowledgeResult acknowlegeResult = await eventGridClient.AcknowledgeCloudEventsAsync(topicName, subscription, new AcknowledgeOptions(successTokens));
+                _logger.LogInformation($"{successTokens.Count} Events ingested and acknowledged successfully for {topicName}.");
+                LogLockTokensResult(topicName, acknowlegeResult.SucceededLockTokens, acknowlegeResult.FailedLockTokens);
+            }
+            if (failedTokens.Count > 0)
+            {
+                ReleaseResult releaseResult = await eventGridClient.ReleaseCloudEventsAsync(topicName, subscription, new ReleaseOptions(failedTokens));
+                _logger.LogInformation($"{successTokens.Count} Events failed ingestion and released successfully for {topicName}.");
                 LogLockTokensResult(topicName, releaseResult.SucceededLockTokens, releaseResult.FailedLockTokens);
             }
         }
 
         /// <summary>
-        /// Logs the result summary for lock tokens.
+        /// Logs the outcome of acknowledging or releasing events based on their lock tokens.
         /// </summary>
         /// <param name="tokenName">The name associated with the lock tokens.</param>
-        /// <param name="succeededLockTokens">A list of lock tokens that succeeded.</param>
-        /// <param name="failedLockTokens">A list of lock tokens that failed.</param>
+        /// <param name="succeededLockTokens">List of lock tokens that were successfully processed.</param>
+        /// <param name="failedLockTokens">List of lock tokens that failed to process.</param>
         private void LogLockTokensResult(string tokenName, IReadOnlyList<string> succeededLockTokens, IReadOnlyList<FailedLockToken> failedLockTokens)
         {
             if (failedLockTokens.Count > 0)
@@ -133,7 +149,6 @@ namespace EventIngestionServices
                     _logger.LogWarning($"{tokenName} Error Description: {failedLockToken.ToString}");
                 }
             }
-
             _logger.LogDebug($"{tokenName} Success lock token count: {succeededLockTokens.Count}");
             foreach (string lockToken in succeededLockTokens)
             {
@@ -156,7 +171,6 @@ namespace EventIngestionServices
         /// the key is available and Azure AD-based authentication (using DefaultAzureCredential) in environments like Azure
         /// where Managed Identities can be leveraged.
         /// </remarks>
-
         private EventGridClient CreateEventGridClient(string topicKey)
         {
             EventGridClient eventGridClient;
@@ -170,6 +184,13 @@ namespace EventIngestionServices
             }
             return eventGridClient;
         }
+
+        /// <summary>
+        /// Represents the result of ingesting an individual event.
+        /// </summary>
+        /// <param name="Success">Indicates whether the event ingestion was successful.</param>
+        /// <param name="LockToken">The lock token associated with the ingested event, used for acknowledging or releasing the event.</param>
+        private record EventIngestionResult(bool Success, string LockToken);
 
     }
 }

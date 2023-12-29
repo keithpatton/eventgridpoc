@@ -78,18 +78,15 @@ namespace EventGridSubscriberWebApi.Services
 
             try
             {
-                _logger.LogInformation("connecting");
                 connection.Open();
-                _logger.LogInformation("connected");
                 var createTableSql = @"
                     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Events' and xtype='U')
                     CREATE TABLE Events (
-                        Id INT IDENTITY(1,1) PRIMARY KEY,
-                        EventId UNIQUEIDENTIFIER NOT NULL,
+                        EventId UNIQUEIDENTIFIER PRIMARY KEY,
                         EventTime DATETIME2,
                         EventSource NVARCHAR(256),
                         EventType NVARCHAR(256),
-                        CONSTRAINT UQ_EventId UNIQUE (EventId)
+                        EventData NVARCHAR(MAX)
                     )";
                 connection.Execute(createTableSql);
                  
