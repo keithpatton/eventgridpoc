@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventHubsSubscriberFunc", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventGridSubscriberWebApi", "EventGridSubscriberWebApi\EventGridSubscriberWebApi.csproj", "{6B1C2873-58BD-458B-917D-029D4CCD84D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventGridIngestionServices", "EventGridIngestionServices\EventGridIngestionServices.csproj", "{AE2AE78D-D76B-49D9-A3A3-01C7E2FE0167}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventIngestionServices", "EventIngestionServices\EventIngestionServices.csproj", "{AE2AE78D-D76B-49D9-A3A3-01C7E2FE0167}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

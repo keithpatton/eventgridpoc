@@ -1,4 +1,4 @@
-﻿namespace EventGridIngestionServices.Abstractions
+﻿namespace EventIngestionServices.Abstractions
 {
     /// <summary>
     /// Defines a contract for a service responsible for ingesting a batch of events.

@@ -1,7 +1,6 @@
 ﻿using Azure.Messaging;
-using System.Threading.Tasks;
 
-namespace EventGridIngestionServices.Abstractions
+namespace EventIngestionServices.Abstractions
 {
     /// <summary>
     /// Defines a contract for a service that ingests CloudEvent instances.

@@ -1,10 +1,10 @@
-﻿using EventGridIngestionServices.Abstractions;
-using EventGridIngestionServices.Options;
+﻿using EventIngestionServices.Abstractions;
+using EventIngestionServices.Options;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace EventGridIngestionServices
+namespace EventIngestionServices
 {
     /// <summary>
     /// A hosted service that periodically ingests events.

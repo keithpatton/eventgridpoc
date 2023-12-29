@@ -2,12 +2,12 @@
 using Azure.Identity;
 using Azure.Messaging;
 using Azure.Messaging.EventGrid.Namespaces;
-using EventGridIngestionServices.Abstractions;
-using EventGridIngestionServices.Options;
+using EventIngestionServices.Abstractions;
+using EventIngestionServices.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace EventGridIngestionServices
+namespace EventIngestionServices
 {
 
     /// <summary>
@@ -15,7 +15,7 @@ namespace EventGridIngestionServices
     /// </summary>
     public class EventGridIngestionService : IEventsIngestionService
     {
-        private readonly EventsIngestionServiceOptions _options;
+        private readonly EventGridIngestionServiceOptions _options;
         private readonly ILogger _logger;
         private readonly IEventIngestionService _eventIngestionService;
 
@@ -26,7 +26,7 @@ namespace EventGridIngestionServices
         /// <param name="optionsAccessor">The configuration options for the service.</param>
         /// <param name="eventIngestionService">The service to process each individual event.</param>
         public EventGridIngestionService(ILoggerFactory loggerFactory,
-            IOptions<EventsIngestionServiceOptions> optionsAccessor, IEventIngestionService eventIngestionService)
+            IOptions<EventGridIngestionServiceOptions> optionsAccessor, IEventIngestionService eventIngestionService)
         {
             _options = optionsAccessor.Value;
             _logger = loggerFactory.CreateLogger<EventGridIngestionService>();

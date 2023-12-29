@@ -1,9 +1,9 @@
-﻿namespace EventGridIngestionServices.Options
+﻿namespace EventIngestionServices.Options
 {
     /// <summary>
-    /// Represents the configuration options for the EventsIngestionService.
+    /// Represents the configuration options for the EventGridIngestionService.
     /// </summary>
-    public class EventsIngestionServiceOptions
+    public class EventGridIngestionServiceOptions
     {
         /// <summary>
         /// Gets or sets the namespace endpoint for the Event Grid.

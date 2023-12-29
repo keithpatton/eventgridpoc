@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EventGridIngestionServices\EventGridIngestionServices.csproj" />
+    <ProjectReference Include="..\EventIngestionServices\EventIngestionServices.csproj" />
   </ItemGroup>
 
 </Project>

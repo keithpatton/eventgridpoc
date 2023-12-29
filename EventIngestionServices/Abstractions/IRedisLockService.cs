@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace EventGridIngestionServices.Abstractions
+﻿namespace EventIngestionServices.Abstractions
 {
     /// <summary>
     /// Provides an abstraction for a service that manages distributed locks using Redis.

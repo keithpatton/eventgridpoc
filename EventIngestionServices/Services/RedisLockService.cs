@@ -1,13 +1,13 @@
 ﻿using Azure.Identity;
-using EventGridIngestionServices.Abstractions;
-using EventGridIngestionServices.Options;
+using EventIngestionServices.Abstractions;
+using EventIngestionServices.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Wrap;
 using StackExchange.Redis;
 
-namespace EventGridIngestionServices
+namespace EventIngestionServices
 {
 
     /// <summary>

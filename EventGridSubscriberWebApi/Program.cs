@@ -1,9 +1,6 @@
-
-using EventGridIngestionServices;
-using EventGridIngestionServices.Extensions;
-using EventGridSubscriiberWebApi.Options;
-using EventGridSubscriiberWebApi.Services;
-using Microsoft.Extensions.Configuration;
+using EventGridSubscriberWebApi.Options;
+using EventGridSubscriberWebApi.Services;
+using EventIngestionServices.Extensions;
 
 namespace EventGridSubscriberWebApi
 {
@@ -22,9 +19,9 @@ namespace EventGridSubscriberWebApi
 
             // Events Ingestion Services
             builder.Services.Configure<SqlEventIngestionServiceOptions>(builder.Configuration.GetSection("SqlEventIngestionService"));
-            builder.Services.AddEventsIngestion<SqlEventIngestionService>(
+            builder.Services.AddEventGridIngestion<SqlEventIngestionService>(
                 eventsIngestionHostedServiceOptions: opts => builder.Configuration.GetSection("EventsIngestionHostedService").Bind(opts),
-                eventsIngestionServiceOptions: opts => builder.Configuration.GetSection("EventsIngestionService").Bind(opts),
+                eventGridIngestionServiceOptions: opts => builder.Configuration.GetSection("EventGridIngestionService").Bind(opts),
                 redisLockServiceOptions: opts => builder.Configuration.GetSection("RedisLockService").Bind(opts));
 
             var app = builder.Build();

@@ -1,4 +1,4 @@
-﻿namespace EventGridIngestionServices.Options
+﻿namespace EventIngestionServices.Options
 {
     /// <summary>
     /// Configuration options for RedisLockService.
