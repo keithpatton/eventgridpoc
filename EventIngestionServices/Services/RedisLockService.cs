@@ -26,7 +26,6 @@ namespace EventIngestionServices
         /// </summary>
         /// <param name="optionsAccessor">Configuration options for Redis connection and resiliency settings.</param>
         /// <param name="logger">Logger for logging messages and errors.</param>
-
         public RedisLockService(IOptions<RedisLockServiceOptions> optionsAccessor, ILogger<RedisLockService> logger)
         {
             _options = optionsAccessor.Value;
@@ -35,6 +34,17 @@ namespace EventIngestionServices
             _resiliencePolicy = InitialiseResiliencyPolicies();
         }
 
+        /// <summary>
+        /// Initializes and establishes a Redis connection using configuration settings.
+        /// </summary>
+        /// <returns>A ConnectionMultiplexer instance representing the connection to Redis.</returns>
+        /// <remarks>
+        /// This method parses the Redis host and port settings from the configuration options
+        /// and sets additional connection parameters,
+        /// When the PrincipalId is provided in options, it configures the connection for Azure 
+        /// with token credential authentication, otherwise, it uses the Password from options for authentication.
+        /// The method ensures a single instance of ConnectionMultiplexer is created using Lazy initialization.
+        /// </remarks>
         private ConnectionMultiplexer InitConnection()
         {
             var configurationOptions = ConfigurationOptions.Parse($"{_options.Host}:{_options.Port}");
@@ -49,6 +59,7 @@ namespace EventIngestionServices
                 configurationOptions.Password = _options.Password;
             }
             return ConnectionMultiplexer.Connect(configurationOptions);
+            
         }
 
         /// <summary>
@@ -57,7 +68,6 @@ namespace EventIngestionServices
         /// <param name="lockKey">The key representing the lock.</param>
         /// <param name="expiryTime">The duration for which the lock should be held.</param>
         /// <returns>True if the lock was successfully acquired, false otherwise.</returns>
-
         public async Task<bool> TryAcquireLockAsync(string lockKey, TimeSpan expiryTime)
         {
             try
@@ -78,7 +88,6 @@ namespace EventIngestionServices
         /// Releases a previously acquired lock with the given key.
         /// </summary>
         /// <param name="lockKey">The key representing the lock to be released.</param>
-
         public async Task ReleaseLockAsync(string lockKey)
         {
             try
@@ -94,12 +103,10 @@ namespace EventIngestionServices
             }
         }
 
-
         /// <summary>
         /// Initializes resilience policies including retry and circuit breaker for handling Redis operations.
         /// </summary>
         /// <returns>An AsyncPolicyWrap configured with retry and circuit breaker policies.</returns>
-
         private AsyncPolicyWrap InitialiseResiliencyPolicies()
         {
             var retryPolicy = Policy

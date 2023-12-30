@@ -50,7 +50,7 @@
         /// Gets or sets the initial delay between retry attempts.
         /// </summary>
         /// <remarks>
-        /// The default value is set to 2 seconds.
+        /// The default value is set to 2 seconds. Exponential back-off applied based on RetryCount
         /// </remarks>
         public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(2);
 

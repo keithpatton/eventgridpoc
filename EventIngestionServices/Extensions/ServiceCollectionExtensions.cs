@@ -10,7 +10,7 @@ namespace EventIngestionServices.Extensions
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds event ingestion services to the specified IServiceCollection.
+        /// Adds event ingestion services fpr Event Grid to the specified IServiceCollection.
         /// </summary>
         /// <typeparam name="T">The type of the event ingestion service implementation. Must implement IEventIngestionService.</typeparam>
         /// <param name="services">The IServiceCollection to add services to.</param>
@@ -29,26 +29,13 @@ namespace EventIngestionServices.Extensions
             Action<EventGridIngestionServiceOptions>? eventGridIngestionServiceOptions = null,
             Action<RedisLockServiceOptions>? redisLockServiceOptions = null) where T : class, IEventIngestionService
         {
-            // ensure options configured
-            services.Configure<EventsIngestionHostedServiceOptions>(opts =>
-            {
-                eventsIngestionHostedServiceOptions?.Invoke(opts);
-            });
-            services.Configure<EventGridIngestionServiceOptions>(opts =>
-            {
-                eventGridIngestionServiceOptions?.Invoke(opts);
-            });
-
-            services.Configure<RedisLockServiceOptions>(opts =>
-            {
-                redisLockServiceOptions?.Invoke(opts);
-            });
-            // ensure services registered
+            services.Configure<EventsIngestionHostedServiceOptions>(opts => eventsIngestionHostedServiceOptions?.Invoke(opts));
+            services.Configure<EventGridIngestionServiceOptions>(opts => eventGridIngestionServiceOptions?.Invoke(opts));
+            services.Configure<RedisLockServiceOptions>(opts =>redisLockServiceOptions?.Invoke(opts));
             services.AddHostedService<EventsIngestionHostedService>();
             services.AddSingleton<IEventsIngestionService, EventGridIngestionService>();
             services.AddSingleton<IEventIngestionService, T>();
             services.AddSingleton<IRedisLockService, RedisLockService>();
-
             return services;
         }
     }

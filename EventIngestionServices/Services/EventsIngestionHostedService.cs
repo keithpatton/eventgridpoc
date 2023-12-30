@@ -67,12 +67,10 @@ namespace EventIngestionServices
             _timer?.Dispose();
         }
 
-
         /// <summary>
         /// Executes the work task. Ensures that only one execution is happening at a time.
         /// </summary>
         /// <param name="state">State object passed by the Timer.</param>
-
         private void ExecuteTask(object? state)
         {
             lock (_lock)
@@ -91,7 +89,6 @@ namespace EventIngestionServices
         /// before processing and releasing it afterward.
         /// </summary>
         /// <returns>A task representing the asynchronous operation of event ingestion.</returns>
-
         private async Task DoWorkAsync()
         {
             bool lockAcquired = false;
