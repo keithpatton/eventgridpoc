@@ -9,32 +9,24 @@ namespace EventIngestionServices
     /// <summary>
     /// A hosted service that periodically ingests events.
     /// </summary>
-    public class EventsIngestionHostedService : IHostedService, IDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="EventsIngestionHostedService"/> class.
+    /// </remarks>
+    /// <param name="optionsAccessor">Provides configuration options for the service.</param>
+    /// <param name="logger">The logger to use for logging information and errors.</param>
+    /// <param name="eventsIngestionService">The service responsible for ingesting events.</param>
+    /// <param name="redisLockService">The service responsible for managing distributed locks.</param>
+    public class EventsIngestionHostedService(IOptions<EventsIngestionHostedServiceOptions> optionsAccessor,
+        ILogger<EventsIngestionHostedService> logger,
+        IEventsIngestionService eventsIngestionService, IRedisLockService redisLockService) : IHostedService, IDisposable
     {
         private Timer? _timer;
         private Task? _lastExecutionTask;
-        private readonly ILogger _logger;
-        private readonly IEventsIngestionService _eventsIngestionService;
+        private readonly ILogger _logger = logger;
+        private readonly IEventsIngestionService _eventsIngestionService = eventsIngestionService;
         private readonly object _lock = new();
-        private readonly IRedisLockService _redisLockService;
-        private readonly EventsIngestionHostedServiceOptions _options;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EventsIngestionHostedService"/> class.
-        /// </summary>
-        /// <param name="optionsAccessor">Provides configuration options for the service.</param>
-        /// <param name="logger">The logger to use for logging information and errors.</param>
-        /// <param name="eventsIngestionService">The service responsible for ingesting events.</param>
-        /// <param name="redisLockService">The service responsible for managing distributed locks.</param>
-        public EventsIngestionHostedService(IOptions<EventsIngestionHostedServiceOptions> optionsAccessor,
-            ILogger<EventsIngestionHostedService> logger,
-            IEventsIngestionService eventsIngestionService, IRedisLockService redisLockService)
-        {
-            _options = optionsAccessor.Value;
-            _logger = logger;
-            _eventsIngestionService = eventsIngestionService;
-            _redisLockService = redisLockService;
-        }
+        private readonly IRedisLockService _redisLockService = redisLockService;
+        private readonly EventsIngestionHostedServiceOptions _options = optionsAccessor.Value;
 
         /// <summary>
         /// Triggered when the application host is ready to start the service.
@@ -65,6 +57,7 @@ namespace EventIngestionServices
         public void Dispose()
         {
             _timer?.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>

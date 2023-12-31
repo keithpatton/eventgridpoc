@@ -12,25 +12,19 @@ namespace EventIngestionServices
     /// <summary>
     /// Service responsible for ingesting events from Azure Event Grid.
     /// </summary>
-    public class EventGridIngestionService : IEventsIngestionService
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="EventsIngestionService"/> class.
+    /// </remarks>
+    /// <param name="loggerFactory">The factory to create an instance of <see cref="ILogger"/>.</param>
+    /// <param name="optionsAccessor">The configuration options for the service.</param>
+    /// <param name="eventIngestionService">The service to process each individual event.</param>
+    public class EventGridIngestionService(ILoggerFactory loggerFactory,
+        IOptions<EventGridIngestionServiceOptions> optionsAccessor, 
+        IEventIngestionService eventIngestionService) : IEventsIngestionService
     {
-        private readonly EventGridIngestionServiceOptions _options;
-        private readonly ILogger _logger;
-        private readonly IEventIngestionService _eventIngestionService;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EventsIngestionService"/> class.
-        /// </summary>
-        /// <param name="loggerFactory">The factory to create an instance of <see cref="ILogger"/>.</param>
-        /// <param name="optionsAccessor">The configuration options for the service.</param>
-        /// <param name="eventIngestionService">The service to process each individual event.</param>
-        public EventGridIngestionService(ILoggerFactory loggerFactory,
-            IOptions<EventGridIngestionServiceOptions> optionsAccessor, IEventIngestionService eventIngestionService)
-        {
-            _options = optionsAccessor.Value;
-            _logger = loggerFactory.CreateLogger<EventGridIngestionService>();
-            _eventIngestionService = eventIngestionService;
-        }
+        private readonly EventGridIngestionServiceOptions _options = optionsAccessor.Value;
+        private readonly ILogger _logger = loggerFactory.CreateLogger<EventGridIngestionService>();
+        private readonly IEventIngestionService _eventIngestionService = eventIngestionService;
 
         /// <summary>
         /// Asynchronously ingests events from configured topics.
@@ -62,13 +56,13 @@ namespace EventIngestionServices
                 do
                 {
                     var maxWaitTime = _options.MaxWaitTime;
-                    _logger.LogInformation($"Events requested for {topicName}");
+                    _logger.LogInformation("Events requested for {TopicName}", topicName);
                     ReceiveResult result = await eventGridClient.ReceiveCloudEventsAsync(topicName, subscription, _options.EventBatchSize, maxWaitTime);
                     eventsToIngest = result.Value.Any();
-                    _logger.LogInformation($"{result.Value.Count} Events received for {topicName}");
+                    _logger.LogInformation("{EventCount} Events received for {TopicName}", result.Value.Count, topicName);
                     if (eventsToIngest)
                     {
-                        _logger.LogInformation($"{result.Value.Count} Events received for {topicName}");
+                        _logger.LogInformation("{EventCount} Events received for {TopicName}", result.Value.Count, topicName);
                         var eventIngestionTasks = result.Value.Select(IngestEventAsync);
                         var eventIngestionResults = await Task.WhenAll(eventIngestionTasks);
                         await ProcessEventIngestionResults(eventGridClient, topicName, subscription, eventIngestionResults);
@@ -77,7 +71,7 @@ namespace EventIngestionServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error occurred when ingesting topic events for {topicName}");
+                _logger.LogError(ex, "Error occurred when ingesting topic events for {TopicName}", topicName);
                 throw;
             }
         }
@@ -100,7 +94,7 @@ namespace EventIngestionServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error ingesting event: {ex.Message}");
+                _logger.LogError(ex, "Error ingesting event");
                 return new EventIngestionResult(false, detail.BrokerProperties.LockToken);
             }
         }
@@ -120,13 +114,13 @@ namespace EventIngestionServices
             if (successTokens.Count > 0)
             {
                 AcknowledgeResult acknowlegeResult = await eventGridClient.AcknowledgeCloudEventsAsync(topicName, subscription, new AcknowledgeOptions(successTokens));
-                _logger.LogInformation($"{successTokens.Count} Events ingested and acknowledged successfully for {topicName}.");
+                _logger.LogInformation("{SuccessTokensCount} Events ingested and acknowledged successfully for {TopicName}.", successTokens.Count, topicName);
                 LogLockTokensResult(topicName, acknowlegeResult.SucceededLockTokens, acknowlegeResult.FailedLockTokens);
             }
             if (failedTokens.Count > 0)
             {
                 ReleaseResult releaseResult = await eventGridClient.ReleaseCloudEventsAsync(topicName, subscription, new ReleaseOptions(failedTokens));
-                _logger.LogInformation($"{successTokens.Count} Events failed ingestion and released successfully for {topicName}.");
+                _logger.LogInformation("{FailedTokensCount} Events failed ingestion and released successfully for {TopicName}.", failedTokens.Count, topicName);
                 LogLockTokensResult(topicName, releaseResult.SucceededLockTokens, releaseResult.FailedLockTokens);
             }
         }
@@ -141,18 +135,18 @@ namespace EventIngestionServices
         {
             if (failedLockTokens.Count > 0)
             {
-                _logger.LogWarning($"{tokenName} Failed lock token count: {failedLockTokens.Count}");
+                _logger.LogWarning("{TokenName} Failed lock token count: {FailedLockTokensCount}", tokenName, failedLockTokens.Count);
                 foreach (FailedLockToken failedLockToken in failedLockTokens)
                 {
-                    _logger.LogWarning($"{tokenName} Lock Token: {failedLockToken.LockToken}");
-                    _logger.LogWarning($"{tokenName} Error Code: {failedLockToken.Error}");
-                    _logger.LogWarning($"{tokenName} Error Description: {failedLockToken.ToString}");
+                    _logger.LogWarning("{TokenName} Lock Token: {FailedLockToken}", tokenName, failedLockToken.LockToken);
+                    _logger.LogWarning("{TokenName} Error Code: {FailedLockTokenError}", tokenName, failedLockToken.Error);
+                    _logger.LogWarning("{TokenName} Error Description: {FailedLockTokenDescription}", tokenName, failedLockToken.ToString());
                 }
             }
-            _logger.LogDebug($"{tokenName} Success lock token count: {succeededLockTokens.Count}");
+            _logger.LogDebug("{TokenName} Success lock token count: {SucceededLockTokensCount}", tokenName, succeededLockTokens.Count);
             foreach (string lockToken in succeededLockTokens)
             {
-                _logger.LogDebug($"{tokenName} Lock Token: {lockToken}");
+                _logger.LogDebug("{TokenName} Lock Token: {LockToken}", tokenName, lockToken);
             }
         }
 

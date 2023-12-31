@@ -16,7 +16,6 @@ namespace EventIngestionServices
     public class RedisLockService : IRedisLockService
     {
         private readonly Lazy<ConnectionMultiplexer> _lazyConnection;
-        private IDatabase _database => _lazyConnection.Value.GetDatabase();
         private readonly AsyncPolicyWrap _resiliencePolicy;
         private readonly ILogger<RedisLockService> _logger;
         private readonly RedisLockServiceOptions _options;
@@ -74,7 +73,7 @@ namespace EventIngestionServices
             { 
                 return await _resiliencePolicy.ExecuteAsync(async () =>
                 {
-                    return await _database.StringSetAsync(lockKey, "lock", expiryTime, When.NotExists);
+                    return await _lazyConnection.Value.GetDatabase().StringSetAsync(lockKey, "lock", expiryTime, When.NotExists);
                 });
             }
             catch (Exception ex)
@@ -94,7 +93,7 @@ namespace EventIngestionServices
             {
                 await _resiliencePolicy.ExecuteAsync(async () =>
                 {
-                    await _database.KeyDeleteAsync(lockKey);
+                    await _lazyConnection.Value.GetDatabase().KeyDeleteAsync(lockKey);
                 });
             }
             catch (Exception ex)
@@ -117,7 +116,7 @@ namespace EventIngestionServices
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(_options.RetryDelay.TotalSeconds, retryAttempt)), // Exponential back-off
                     onRetry: (exception, timeSpan, retryCount, context) =>
                     {
-                        _logger.LogWarning(exception, $"Retry Attempt {retryCount}");
+                        _logger.LogWarning(exception, "Retry Attempt {RetryCount}", retryCount);
                     }
                 );
 
@@ -131,7 +130,7 @@ namespace EventIngestionServices
                     durationOfBreak: _options.CircuitBreakerSamplingDuration,
                     onBreak: (exception, timespan) =>
                     {
-                        _logger.LogWarning($"Circuit broken due to {exception.GetType().Name}");
+                        _logger.LogWarning("Circuit broken due to {ExceptionType}", exception.GetType().Name);
                     },
                     onReset: () =>
                     {

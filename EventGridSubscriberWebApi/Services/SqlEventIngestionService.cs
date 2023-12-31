@@ -42,7 +42,7 @@ namespace EventGridSubscriberWebApi.Services
 
                 if (exists)
                 {
-                    _logger.LogWarning($"Duplicate CloudEvent with ID {cloudEvent.Id} detected and skipped.");
+                    _logger.LogWarning("Duplicate CloudEvent with ID {CloudEventId} detected and skipped.", cloudEvent.Id);
                     return;
                 }
 

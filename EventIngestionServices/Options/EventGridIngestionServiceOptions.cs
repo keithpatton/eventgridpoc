@@ -35,7 +35,7 @@
         /// <remarks>
         /// Contains configurations for each topic, including name and key.
         /// </remarks>
-        public List<TopicConfig> Topics { get; set; } = new List<TopicConfig>();
+        public List<TopicConfig> Topics { get; set; } = [];
     }
 
     /// <summary>
