@@ -13,13 +13,13 @@ namespace EventHubsSubscriberFunc
         [Function(nameof(CustomisationDomainEventsProcessor))]
         public async Task CustomisationDomainEventsProcessor([EventHubTrigger("customisation", Connection = "NamespaceConnString", ConsumerGroup = "personalisation")] EventData[] events)
         {
-            await RunFunctionAsync(config["TopicName1"], events);
+            await RunFunctionAsync(config["TopicName1"]!, events);
         }
 
         [Function(nameof(LocationDomainEventsProcessor))]
         public async Task LocationDomainEventsProcessor([EventHubTrigger("location", Connection = "NamespaceConnString", ConsumerGroup = "personalisation")] EventData[] events)
         {
-            await RunFunctionAsync(config["TopicName2"], events);
+            await RunFunctionAsync(config["TopicName2"]!, events);
         }
 
         /// <summary>
