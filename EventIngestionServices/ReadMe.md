@@ -12,10 +12,10 @@ Client application is required to implement a single interface [*IEventIngestion
 
 ![Hosted Services Singleton](./Images/HostedServicesSingleton.png)
 
-Prerequistics
+Prerequisites
 -
 - Event Grid Namespace with Namespace Topic(s) and Subscription(s) from which to ingest events
-- Azure Redis Cache instance available for distributed lock support for the hosted service.
+- Azure Redis Cache instance available for distributed lock support for the hosted service (if desired)
 - Existing .Net app from which you would like ingest events.
 
 Azure Event Grid Support
@@ -26,9 +26,11 @@ It is assumed that you have one or more Event Grid Namespace Topics and dedicate
 
 Azure Redis Cache Usage
 --
-Azure Redis Cache is used for ensuring only a single hosted service is performing work across all available instances. 
+Azure Redis Cache is optionally used for ensuring only a single hosted service is performing work across all available instances. 
 
-It is assumed you have an Azure Redis Cache through which to configure the lock settings.
+It is assumed you have an Azure Redis Cache through which to configure the lock settings if in use.
+
+Set the EventsIngestionHostedServiceOptions.RedisLockDisabled property to true if you don't want to make use of distributed locks.
 
 Setting up the Services
 -
@@ -45,7 +47,7 @@ The above code registers a .Net Hosted Service which periodically ingests events
 
 On each run, events are retrieved in batches until no more are available. 
 
-The hosted service will run on all application instances, with a Redis lock used to ensure only one instance runs at a time. 
+The hosted service will run on all application instances, with a Redis lock used to ensure only one instance runs at a time by default. 
 
 The *MyEventIngestionService* class above is the client application's implementation of [*IEventIngestionService*](https://github.com/keithpatton/eventgridpoc/blob/main/EventIngestionServices/Abstractions/IEventIngestionService.cs), required to carry out ingestion for each individual event received. 
 
@@ -59,6 +61,7 @@ For {SECRET} values, secrets.json can be used locally and be replaced from Key V
 ```
   "EventsIngestionHostedService": {
     "PollingFrequency": "00:00:30",
+    "RedisLockDisabled": false,
     "RedisLockKey": "MyService-EventsIngestionHostedService", // ensure unique for your service
     "RedisLockTimeout": "00:05:00"
   },

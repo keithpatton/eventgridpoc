@@ -14,6 +14,14 @@
         public TimeSpan PollingFrequency { get; set; } = TimeSpan.FromSeconds(30);
 
         /// <summary>
+        /// Gets or sets whether usage of Redis lock is disabled
+        /// </summary>
+        /// <remarks>
+        /// The default value is false. Setting to true means hosted service will run on all instances simultaneously.
+        /// </remarks>
+        public bool RedisLockDisabled { get;set; } = false;
+
+        /// <summary>
         /// Gets or sets the key used for acquiring a Redis lock in the hosted service.
         /// </summary>
         /// <remarks>

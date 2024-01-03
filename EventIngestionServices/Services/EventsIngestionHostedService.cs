@@ -87,11 +87,14 @@ namespace EventIngestionServices
             bool lockAcquired = false;
             try
             {
-                lockAcquired = await _redisLockService.TryAcquireLockAsync(_options.RedisLockKey, _options.RedisLockTimeout);
-                if (!lockAcquired)
+                if (!_options.RedisLockDisabled)
                 {
-                    _logger.LogInformation("Unable to acquire distributed lock for events ingestion, skipping this run");
-                    return;
+                    lockAcquired = await _redisLockService.TryAcquireLockAsync(_options.RedisLockKey, _options.RedisLockTimeout);
+                    if (!lockAcquired)
+                    {
+                        _logger.LogInformation("Unable to acquire distributed lock for events ingestion, skipping this run");
+                        return;
+                    }
                 }
                 await _eventsIngestionService.IngestAsync();
                 _logger.LogInformation("Successfully completed events ingestion.");
