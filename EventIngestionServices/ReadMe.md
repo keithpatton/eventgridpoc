@@ -8,7 +8,7 @@ Event Grid (Namespace Topics and Subscriptions) is the initial supported eventin
 
 A .Net Hosted Service is used to periodically fetch events in batch and send on to client application for ingestion. 
 
-Client application is required to implement a single interface *IEventIngestionService* to handle the ingestion of each single event.
+Client application is required to implement a single interface [*IEventIngestionService*](https://github.com/keithpatton/eventgridpoc/blob/main/EventIngestionServices/Abstractions/IEventIngestionService.cs) to handle the ingestion of each single event.
 
 ![Hosted Services Singleton](./Images/HostedServicesSingleton.png)
 
@@ -43,9 +43,11 @@ Use the AddEventGridIngestion extension method to set up the services in your .N
 
 The above code registers a .Net Hosted Service which periodically ingests events from Event Grid. 
 
+On each run, events are retrieved in batches until no more are available. 
+
 The hosted service will run on all application instances, with a Redis lock used to ensure only one instance runs at a time. 
 
-The *MyEventIngestionService* class is the client application's implementation of IEventIngestionService, required to carry out ingestion for each individual event received. 
+The *MyEventIngestionService* class above is the client application's implementation of [*IEventIngestionService*](https://github.com/keithpatton/eventgridpoc/blob/main/EventIngestionServices/Abstractions/IEventIngestionService.cs), required to carry out ingestion for each individual event received. 
 
 Configuration
 -
