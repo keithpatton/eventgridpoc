@@ -115,7 +115,7 @@ Cloud Event Specification
 
 The IEventIngestionService.IngestAsync implementation will receive a Cloud Event. 
 
-The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md) provides for some common attributes that are useful when ingestiong each event.
+The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md) provides for some common attributes that are useful when ingesting each event.
 
 - Id - A unique identifier (Guid by default) that can be used to check for uniqueness
 - Source - Indicates the source of the event defined by event producer using a uri-reference (e.g. /myservice or mycompany.com/myservice)
