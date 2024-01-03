@@ -6,12 +6,11 @@ It provides a set of services and extensions that allow for easy setup, configur
 
 Event Grid (Namespace Topics and Subscriptions) is the initial supported eventing backplane.
 
-A .Net Hosted Service (distributed singleton) is used to periodically fetch events in batch and send on to client application for ingestion. 
+A .Net Hosted Service is used to periodically fetch events in batch and send on to client application for ingestion. 
 
-Client application is required to implement a single interface *IEventIngestionService* to handle the ingestion of a single event.
+Client application is required to implement a single interface *IEventIngestionService* to handle the ingestion of each single event.
 
 ![Hosted Services Singleton](./Images/HostedServicesSingleton.png)
-
 
 Prerequistics
 -
@@ -33,7 +32,7 @@ It is assumed you have an Azure Redis Cache through which to configure the lock 
 
 Setting up the Services
 -
-Integrate the services in your .NET application's Program.cs:
+Use the AddEventGridIngestion extension method to set up the services in your .NET application's Program.cs:
 
 ```
     builder.Services.AddEventGridIngestion<MyEventIngestionService>(
