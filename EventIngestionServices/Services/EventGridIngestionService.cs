@@ -62,7 +62,6 @@ namespace EventIngestionServices
                     _logger.LogInformation("{EventCount} Events received for {TopicName}", result.Value.Count, topicName);
                     if (eventsToIngest)
                     {
-                        _logger.LogInformation("{EventCount} Events received for {TopicName}", result.Value.Count, topicName);
                         var eventIngestionTasks = result.Value.Select(IngestEventAsync);
                         var eventIngestionResults = await Task.WhenAll(eventIngestionTasks);
                         await ProcessEventIngestionResults(eventGridClient, topicName, subscription, eventIngestionResults);
