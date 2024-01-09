@@ -146,7 +146,7 @@ namespace EventIngestionServices
         /// <param name="failedLockTokens">List of lock tokens that failed to process.</param>
         private void LogLockTokensResult(string tokenName, IReadOnlyList<string> succeededLockTokens, IReadOnlyList<FailedLockToken> failedLockTokens)
         {
-            if (failedLockTokens.Count > 0)
+            if (_logger.IsEnabled(LogLevel.Warning) && failedLockTokens.Count > 0)
             {
                 _logger.LogWarning("{TokenName} Failed lock token count: {FailedLockTokensCount}", tokenName, failedLockTokens.Count);
                 foreach (FailedLockToken failedLockToken in failedLockTokens)
@@ -156,10 +156,13 @@ namespace EventIngestionServices
                     _logger.LogWarning("{TokenName} Error Description: {FailedLockTokenDescription}", tokenName, failedLockToken.ToString());
                 }
             }
-            _logger.LogDebug("{TokenName} Success lock token count: {SucceededLockTokensCount}", tokenName, succeededLockTokens.Count);
-            foreach (string lockToken in succeededLockTokens)
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("{TokenName} Lock Token: {LockToken}", tokenName, lockToken);
+                _logger.LogDebug("{TokenName} Success lock token count: {SucceededLockTokensCount}", tokenName, succeededLockTokens.Count);
+                foreach (string lockToken in succeededLockTokens)
+                {
+                    _logger.LogDebug("{TokenName} Lock Token: {LockToken}", tokenName, lockToken);
+                }
             }
         }
 
