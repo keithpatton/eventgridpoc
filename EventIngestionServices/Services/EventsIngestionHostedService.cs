@@ -74,19 +74,27 @@ namespace EventIngestionServices
         /// <param name="state">State object passed by the Timer.</param>
         private void ExecuteTask(object? state)
         {
-            lock (_lock)
+            if (!_options.AllowConcurrentRuns)
             {
-                if (_lastExecutionTask != null && !_lastExecutionTask.IsCompleted)
+                lock (_lock)
                 {
-                    _logger.LogInformation("Events Ingestion already in progress on this instance, skipping this run");
-                    return;
+                    if (_lastExecutionTask != null && !_lastExecutionTask.IsCompleted)
+                    {
+                        _logger.LogInformation("Events Ingestion already in progress on this instance, skipping this run");
+                        return;
+                    }
+                    _lastExecutionTask = DoWorkAsync();
                 }
-                _lastExecutionTask = DoWorkAsync();
+            }
+            else
+            {
+                // Start task without waiting for it to complete and without assigning it to _lastExecutionTask. This allows for concurrent runs
+                _ = DoWorkAsync();
             }
         }
 
         /// <summary>
-        /// Performs the actual work of ingesting events, including acquiring a distributed lock 
+        /// Performs the actual work of ingesting events, including optionally acquiring a distributed lock 
         /// before processing and releasing it afterward.
         /// </summary>
         /// <returns>A task representing the asynchronous operation of event ingestion.</returns>
