@@ -19,7 +19,7 @@ namespace EventGridSubscriberWebApi.Services
 
         public async Task IngestAsync(CloudEvent cloudEvent)
         {
-            await _mediator.Send(new IngestEventRequest(cloudEvent));
+            await _mediator.Publish(new IngestEventRequest(cloudEvent));
         }
     }
 
