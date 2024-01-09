@@ -18,7 +18,7 @@ namespace EventIngestionServices
         private readonly EventGridIngestionServiceOptions _options;
         private readonly ILogger _logger;
         private readonly IEventIngestionService _eventIngestionService;
-        private readonly ConcurrentDictionary<(string, string), EventGridClient> _clients;
+        private readonly ConcurrentDictionary<string, EventGridClient> _clients;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventGridIngestionService"/> class.
@@ -37,7 +37,7 @@ namespace EventIngestionServices
             _options = optionsAccessor.Value;
             _logger = loggerFactory.CreateLogger<EventGridIngestionService>();
             _eventIngestionService = eventIngestionService;
-            _clients = new ConcurrentDictionary<(string, string), EventGridClient>();
+            _clients = new ConcurrentDictionary<string, EventGridClient>();
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace EventIngestionServices
         {
             try
             {
-                var eventGridClient = GetOrCreateEventGridClient(topicName, subscription, topicKey);
+                var eventGridClient = GetOrCreateEventGridClient(topicName, topicKey);
                 bool eventsToIngest;
                 do
                 {
@@ -176,9 +176,9 @@ namespace EventIngestionServices
         /// This method ensures that each unique combination of topic name and subscription 
         /// uses the same EventGridClient instance, optimizing resource usage.
         /// </remarks>
-        private EventGridClient GetOrCreateEventGridClient(string topicName, string subscription, string topicKey)
+        private EventGridClient GetOrCreateEventGridClient(string topicName,  string topicKey)
         {
-            return _clients.GetOrAdd((topicName, subscription), _ =>
+            return _clients.GetOrAdd(topicName, _ =>
             {
                 return CreateEventGridClient(topicKey);
             });
