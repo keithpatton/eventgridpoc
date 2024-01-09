@@ -5,6 +5,7 @@ using EventIngestionServices.Abstractions;
 using EventIngestionServices.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Collections.Concurrent;
 
 namespace EventIngestionServices
 {
@@ -12,19 +13,32 @@ namespace EventIngestionServices
     /// <summary>
     /// Service responsible for ingesting events from Azure Event Grid.
     /// </summary>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="EventsIngestionService"/> class.
-    /// </remarks>
-    /// <param name="loggerFactory">The factory to create an instance of <see cref="ILogger"/>.</param>
-    /// <param name="optionsAccessor">The configuration options for the service.</param>
-    /// <param name="eventIngestionService">The service to process each individual event.</param>
-    public class EventGridIngestionService(ILoggerFactory loggerFactory,
-        IOptions<EventGridIngestionServiceOptions> optionsAccessor, 
-        IEventIngestionService eventIngestionService) : IEventsIngestionService
+    public class EventGridIngestionService : IEventsIngestionService
     {
-        private readonly EventGridIngestionServiceOptions _options = optionsAccessor.Value;
-        private readonly ILogger _logger = loggerFactory.CreateLogger<EventGridIngestionService>();
-        private readonly IEventIngestionService _eventIngestionService = eventIngestionService;
+        private readonly EventGridIngestionServiceOptions _options;
+        private readonly ILogger _logger;
+        private readonly IEventIngestionService _eventIngestionService;
+        private readonly ConcurrentDictionary<(string, string), EventGridClient> _clients;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventGridIngestionService"/> class.
+        /// </summary>
+        /// <param name="loggerFactory">The factory to create an instance of <see cref="ILogger"/>.</param>
+        /// <param name="optionsAccessor">The configuration options for the service.</param>
+        /// <param name="eventIngestionService">The service to process each individual event.</param>
+        /// <remarks>
+        /// This service is responsible for ingesting events from Azure Event Grid 
+        /// and utilizes a ConcurrentDictionary to manage EventGridClient instances.
+        /// </remarks>
+        public EventGridIngestionService(ILoggerFactory loggerFactory,
+          IOptions<EventGridIngestionServiceOptions> optionsAccessor,
+          IEventIngestionService eventIngestionService)
+        {
+            _options = optionsAccessor.Value;
+            _logger = loggerFactory.CreateLogger<EventGridIngestionService>();
+            _eventIngestionService = eventIngestionService;
+            _clients = new ConcurrentDictionary<(string, string), EventGridClient>();
+        }
 
         /// <summary>
         /// Asynchronously ingests events from configured topics.
@@ -51,7 +65,7 @@ namespace EventIngestionServices
         {
             try
             {
-                var eventGridClient = CreateEventGridClient(topicKey);
+                var eventGridClient = GetOrCreateEventGridClient(topicName, subscription, topicKey);
                 bool eventsToIngest;
                 do
                 {
@@ -147,6 +161,27 @@ namespace EventIngestionServices
             {
                 _logger.LogDebug("{TokenName} Lock Token: {LockToken}", tokenName, lockToken);
             }
+        }
+
+        /// <summary>
+        /// Retrieves an existing EventGridClient instance from the cache or creates a new one if it doesn't exist.
+        /// </summary>
+        /// <param name="topicName">The name of the topic associated with the EventGridClient.</param>
+        /// <param name="subscription">The subscription name associated with the EventGridClient.</param>
+        /// <param name="topicKey">The access key for the Event Grid topic.</param>
+        /// <returns>
+        /// An EventGridClient instance configured for the specified topic and subscription.
+        /// </returns>
+        /// <remarks>
+        /// This method ensures that each unique combination of topic name and subscription 
+        /// uses the same EventGridClient instance, optimizing resource usage.
+        /// </remarks>
+        private EventGridClient GetOrCreateEventGridClient(string topicName, string subscription, string topicKey)
+        {
+            return _clients.GetOrAdd((topicName, subscription), _ =>
+            {
+                return CreateEventGridClient(topicKey);
+            });
         }
 
         /// <summary>
