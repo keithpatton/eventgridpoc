@@ -35,7 +35,7 @@
         /// <remarks>
         /// Contains configurations for each topic, including name and key.
         /// </remarks>
-        public List<TopicConfig> Topics { get; set; } = [];
+        public List<TopicConfig> Topics { get; set; } = new List<TopicConfig>();
     }
 
     /// <summary>
@@ -67,7 +67,7 @@
         /// separately subscribe to and ingest events from the Event Grid. This allows for handling 
         /// multiple subscriptions for a single topic.
         /// </remarks>
-        public List<string> Subscriptions { get; set; } = []; 
+        public List<string> Subscriptions { get; set; } = new List<string>(); 
 
     }
 }
