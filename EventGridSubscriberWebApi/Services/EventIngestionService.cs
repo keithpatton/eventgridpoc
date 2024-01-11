@@ -1,5 +1,5 @@
 ﻿using Azure.Messaging;
-using EventIngestionServices.Abstractions;
+using Serko.Messaging.EventIngestion.Abstractions;
 using MediatR;
 
 namespace EventGridSubscriberWebApi.Services

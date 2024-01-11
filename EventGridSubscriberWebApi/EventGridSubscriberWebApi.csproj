@@ -12,11 +12,8 @@
     <PackageReference Include="Dapper" Version="2.1.28" />
     <PackageReference Include="MediatR" Version="12.2.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.2" />
+    <PackageReference Include="Serko.Messaging.EventIngestion" Version="1.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\EventIngestionServices\EventIngestionServices.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 using EventGridSubscriberWebApi.Options;
 using EventGridSubscriberWebApi.Services;
-using EventIngestionServices.Extensions;
+using Serko.Messaging.EventIngestion.Extensions;
 
 namespace EventGridSubscriberWebApi
 {

@@ -1,13 +1,14 @@
 using Azure;
 using Azure.Messaging;
 using Azure.Messaging.EventGrid.Namespaces;
-using EventIngestionServices.Abstractions;
-using EventIngestionServices.Extensions;
-using EventIngestionServices.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serko.Messaging.EventIngestion;
+using Serko.Messaging.EventIngestion.Abstractions;
+using Serko.Messaging.EventIngestion.Extensions;
+using Serko.Messaging.EventIngestion.Options;
 
 namespace EventIngestionServices.Tests
 {

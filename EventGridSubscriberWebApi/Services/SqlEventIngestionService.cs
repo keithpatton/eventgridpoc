@@ -1,6 +1,6 @@
 ﻿using Azure.Messaging;
 using Dapper;
-using EventIngestionServices.Abstractions;
+using Serko.Messaging.EventIngestion.Abstractions;
 using EventGridSubscriberWebApi.Options;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
