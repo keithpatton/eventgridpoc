@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventHubsSubscriberFunc", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventGridSubscriberWebApi", "EventGridSubscriberWebApi\EventGridSubscriberWebApi.csproj", "{6B1C2873-58BD-458B-917D-029D4CCD84D5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventGridSubscriberHost", "EventGridSubscriberHost\EventGridSubscriberHost.csproj", "{E3F88B39-6938-41D8-B77D-C229CA2883D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{6B1C2873-58BD-458B-917D-029D4CCD84D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B1C2873-58BD-458B-917D-029D4CCD84D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B1C2873-58BD-458B-917D-029D4CCD84D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3F88B39-6938-41D8-B77D-C229CA2883D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3F88B39-6938-41D8-B77D-C229CA2883D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3F88B39-6938-41D8-B77D-C229CA2883D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3F88B39-6938-41D8-B77D-C229CA2883D1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
