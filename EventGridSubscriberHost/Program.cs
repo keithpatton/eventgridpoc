@@ -2,7 +2,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serko.Messaging.EventIngestion.Extensions;
+using Serko.Messaging.EventIngestion.Instrumentation;
 
 namespace EventGridSubscriberHost
 {
@@ -28,12 +32,30 @@ namespace EventGridSubscriberHost
                  })
                 .ConfigureServices((hostContext, services) =>
                 {
+
                     var config = hostContext.Configuration;
                     services.AddEventGridIngestion<TestEventIngestionService>(
                         eventsIngestionHostedServiceOptions: opts => config.GetSection("EventsIngestionHostedService").Bind(opts),
                         eventGridIngestionServiceOptions: opts => config.GetSection("EventGridIngestionService").Bind(opts),
                         redisLockServiceOptions: opts => config.GetSection("RedisLockService").Bind(opts));
+
+                    var env = hostContext.HostingEnvironment;
+                    if (env.IsDevelopment())
+                    {
+                        var assemblyName = typeof(EventIngestionInstrumentation).Assembly.GetName().ToString();
+                        services.AddOpenTelemetry()
+                            .ConfigureResource(resource => resource
+                                .AddService(serviceName: env.ApplicationName))
+                            .WithMetrics(metrics => metrics
+                                .AddMeter(assemblyName)
+                                .AddConsoleExporter())
+                            .WithTracing(tracing => tracing
+                                .AddSource(assemblyName)
+                                .AddConsoleExporter());
+                    }
+
                 });
+
             return builder;
         }
     }
