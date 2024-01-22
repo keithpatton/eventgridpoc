@@ -42,6 +42,7 @@ namespace EventGridSubscriberHost
                     var env = hostContext.HostingEnvironment;
                     if (env.IsDevelopment())
                     {
+                        // export otel metrics/tracing to console for our ingestion library
                         var providerName = "Serko.Messaging.EventIngestion";
                         services.AddOpenTelemetry()
                             .ConfigureResource(resource => resource
@@ -53,7 +54,6 @@ namespace EventGridSubscriberHost
                                 .AddSource(providerName)
                                 .AddConsoleExporter());
                     }
-
                 });
 
             return builder;
