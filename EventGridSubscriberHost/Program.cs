@@ -42,15 +42,15 @@ namespace EventGridSubscriberHost
                     var env = hostContext.HostingEnvironment;
                     if (env.IsDevelopment())
                     {
-                        var assemblyName = typeof(EventIngestionInstrumentation).Assembly.GetName().ToString();
+                        var providerName = "Serko.Messaging.EventIngestion";
                         services.AddOpenTelemetry()
                             .ConfigureResource(resource => resource
                                 .AddService(serviceName: env.ApplicationName))
                             .WithMetrics(metrics => metrics
-                                .AddMeter(assemblyName)
+                                .AddMeter(providerName)
                                 .AddConsoleExporter())
                             .WithTracing(tracing => tracing
-                                .AddSource(assemblyName)
+                                .AddSource(providerName)
                                 .AddConsoleExporter());
                     }
 
