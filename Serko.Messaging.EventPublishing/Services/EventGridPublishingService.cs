@@ -92,6 +92,25 @@ namespace Serko.Messaging.EventPublishing.Services
         }
 
         /// <summary>
+        /// Retrieves an existing EventGridClient instance from the cache or creates a new one if it doesn't exist.
+        /// </summary>
+        /// <param name="topicName">The name of the topic associated with the EventGridClient.</param>
+        /// <returns>
+        /// An EventGridClient instance configured for the specified topic and subscription.
+        /// </returns>
+        /// <remarks>
+        /// This method ensures that each unique combination of topic name and subscription 
+        /// uses the same EventGridClient instance, optimizing resource usage.
+        /// </remarks>
+        private EventGridClient GetOrCreateEventGridClient(string topicName)
+        {
+            return _clients.GetOrAdd(topicName, _ =>
+            {
+                return CreateEventGridClient(topicName);
+            });
+        }
+
+        /// <summary>
         /// Creates an EventGridClient instance for interacting with Azure Event Grid.
         /// </summary>
         /// <param name="topicName">The name of the Event Grid topic.</param>
@@ -106,7 +125,7 @@ namespace Serko.Messaging.EventPublishing.Services
         /// the key is available and Azure AD-based authentication (using DefaultAzureCredential) in environments like Azure
         /// where Managed Identities can be leveraged.
         /// </remarks>
-        private EventGridClient GetOrCreateEventGridClient(string topicName)
+        private EventGridClient CreateEventGridClient(string topicName)
         {
             EventGridClient eventGridClient;
             var topicConfig = _options.Topics.FirstOrDefault(t => t.Name == topicName);
