@@ -1,8 +1,9 @@
-﻿using EventGridPublisherWebApi.Abstractions;
-using EventGridPublisherWebApi.Options;
-using EventGridPublisherWebApi.Services;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Serko.Messaging.EventPublishing.Abstractions;
+using Serko.Messaging.EventPublishing.Options;
+using Serko.Messaging.EventPublishing.Services;
 
-namespace EventGridPublisherWebApi.Extensions
+namespace Serko.Messaging.EventPublishing.Extensions
 {
 
     public static class ServiceCollectionExtensions

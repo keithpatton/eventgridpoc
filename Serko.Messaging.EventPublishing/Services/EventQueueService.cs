@@ -1,8 +1,9 @@
-﻿using EventGridPublisherWebApi.Abstractions;
-using EventGridPublisherWebApi.Model;
+﻿using Microsoft.Extensions.Logging;
+using Serko.Messaging.EventPublishing.Abstractions;
+using Serko.Messaging.EventPublishing.Model;
 using System.Collections.Concurrent;
 
-namespace EventGridPublisherWebApi.Services
+namespace Serko.Messaging.EventPublishing.Services
 {
     public class EventQueueService : IEventQueueService
     {

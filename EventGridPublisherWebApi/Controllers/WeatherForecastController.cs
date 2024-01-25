@@ -1,7 +1,7 @@
 using Azure.Messaging;
-using EventGridPublisherWebApi.Abstractions;
-using EventGridPublisherWebApi.Model;
 using Microsoft.AspNetCore.Mvc;
+using Serko.Messaging.EventPublishing.Abstractions;
+using Serko.Messaging.EventPublishing.Model;
 using System.Text.Json;
 
 namespace EventGridPublisherWebApi.Controllers

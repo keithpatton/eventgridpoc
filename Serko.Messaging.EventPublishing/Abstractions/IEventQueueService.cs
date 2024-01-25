@@ -1,6 +1,6 @@
-﻿using EventGridPublisherWebApi.Model;
+﻿using Serko.Messaging.EventPublishing.Model;
 
-namespace EventGridPublisherWebApi.Abstractions
+namespace Serko.Messaging.EventPublishing.Abstractions
 {
     /// <summary>
     /// Defines the contract for a service that manages event queues for different topics, allowing events to be enqueued and dequeued.

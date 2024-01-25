@@ -1,4 +1,4 @@
-﻿namespace EventGridPublisherWebApi.Options
+﻿namespace Serko.Messaging.EventPublishing.Options
 {
     /// <summary>
     /// Represents the configuration options for the EventGridPublishingService.

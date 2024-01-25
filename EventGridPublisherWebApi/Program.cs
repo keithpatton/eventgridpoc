@@ -1,4 +1,4 @@
-using EventGridPublisherWebApi.Extensions;
+using Serko.Messaging.EventPublishing.Extensions;
 
 namespace EventGridPublisherWebApi
 {

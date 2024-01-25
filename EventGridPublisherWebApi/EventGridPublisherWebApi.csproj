@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Queues\" />
+    <ProjectReference Include="..\Serko.Messaging.EventPublishing\Serko.Messaging.EventPublishing.csproj" />
   </ItemGroup>
 
 </Project>

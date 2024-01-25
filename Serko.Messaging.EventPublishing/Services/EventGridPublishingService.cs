@@ -1,12 +1,14 @@
 ﻿using Azure;
 using Azure.Identity;
 using Azure.Messaging.EventGrid.Namespaces;
-using EventGridPublisherWebApi.Abstractions;
-using EventGridPublisherWebApi.Options;
+using Serko.Messaging.EventPublishing.Abstractions;
+using Serko.Messaging.EventPublishing.Options;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace EventGridPublisherWebApi.Services
+namespace Serko.Messaging.EventPublishing.Services
 {
     /// <summary>
     /// A background service that periodically dequeues events from the event queue service and publishes them to Azure Event Grid.
