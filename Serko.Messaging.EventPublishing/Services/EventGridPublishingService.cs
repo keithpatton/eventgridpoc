@@ -78,6 +78,7 @@ namespace Serko.Messaging.EventPublishing.Services
                     var cloudEvents = topicEvents.Select(eqi => eqi.CloudEvent).ToList();
                     await client.PublishCloudEventsAsync(topicName, cloudEvents);
                     _logger.LogDebug("{Count} events published for topic '{TopicName}'.", topicEvents.Count(), topicName);
+                    await PublishTopicEvents(topicName);
                 }
                 else
                 {
@@ -88,6 +89,10 @@ namespace Serko.Messaging.EventPublishing.Services
             {
                 _logger.LogError(ex, "Failed to publish events for topic '{TopicName}'.", topicName);
                 // TODO Consideration for requeuing or handling failed events could be added here.
+                // EventGridClient has built in retry, but may want to add circuit breaker to account for being completely unavailable
+                // Circuit breaker should involve ensuring we stop attempting to publish events for a period
+                // Note that the queue size could get very big where we are attempting to be resilient to event grid being down (e.g. memory contention). 
+                // Need to use different persistent queue to get better resilience (e.g. Sql)
             }
         }
 
