@@ -14,6 +14,8 @@ namespace EventGridPublisherWebApi.Services
         private readonly SqlEventQueueServiceOptions _options;
         private readonly Lazy<bool> _databaseInitialised;
 
+        private readonly SemaphoreSlim _eventAvailableSemaphore = new SemaphoreSlim(0);
+
         public SqlEventQueueService(IOptions<SqlEventQueueServiceOptions> optionsAccessor, ILogger<SqlEventQueueService> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -56,6 +58,11 @@ namespace EventGridPublisherWebApi.Services
 
             await connection.ExecuteAsync(sql, parameters, transaction);
             transaction.Commit();
+
+            if (eventQueueItems.Any())
+            {
+                _eventAvailableSemaphore.Release();
+            }
 
             _logger.LogDebug("{EventCount} event(s) enqueued", items.Count);
         }
@@ -115,6 +122,10 @@ namespace EventGridPublisherWebApi.Services
             }
         }
 
+        public async Task WaitForEventsAsync(CancellationToken cancellationToken)
+        {
+            await _eventAvailableSemaphore.WaitAsync(cancellationToken);
+        }
 
     }
 }

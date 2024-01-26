@@ -21,14 +21,6 @@
         /// </remarks>
         public int EventBatchSize { get; set; } = 250;
 
-        /// <summary>
-        /// Defines the time interval between consecutive event publishing cycles by the hosted service.
-        /// </summary>
-        /// <remarks>
-        /// The duration to wait before initiating a new cycle of event publishing after the completion of the previous one. 
-        /// </remarks>
-        public TimeSpan PublishingInterval { get; set; } = TimeSpan.FromSeconds(10);
-
 
         /// <summary>
         /// Gets or sets the list of topic configurations for event publishing.

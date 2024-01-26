@@ -9,6 +9,7 @@ namespace Serko.Messaging.EventPublishing.Services
     {
         private readonly ILogger<MemoryEventQueueService> _logger;
         private readonly ConcurrentDictionary<string, ConcurrentQueue<EventQueueItem>> _topicQueues = new();
+        private readonly SemaphoreSlim _eventAvailableSemaphore = new SemaphoreSlim(0);
 
         public MemoryEventQueueService(ILogger<MemoryEventQueueService> logger)
         {
@@ -20,6 +21,7 @@ namespace Serko.Messaging.EventPublishing.Services
             if (eventQueueItem == null) throw new ArgumentNullException(nameof(eventQueueItem));
             _topicQueues.GetOrAdd(eventQueueItem.TopicName, _ => new ConcurrentQueue<EventQueueItem>())
                 .Enqueue(eventQueueItem);
+            _eventAvailableSemaphore.Release();
             _logger.LogDebug("Event enqueued for topic {TopicName}", eventQueueItem.TopicName);
             return Task.CompletedTask;
         }
@@ -31,6 +33,10 @@ namespace Serko.Messaging.EventPublishing.Services
             {
                 _topicQueues.GetOrAdd(eventQueueItem.TopicName, _ => new ConcurrentQueue<EventQueueItem>())
                             .Enqueue(eventQueueItem);
+            }
+            if (eventQueueItems.Any())
+            {
+                _eventAvailableSemaphore.Release();
             }
             _logger.LogDebug("{EventCount} event(s) enqueued", eventQueueItems.Count());
             return Task.CompletedTask;
@@ -51,5 +57,11 @@ namespace Serko.Messaging.EventPublishing.Services
             _logger.LogDebug("{EventCount} event(s) dequeued for {TopicName}", dequeuedEvents.Count, topicName);
             return await Task.FromResult(dequeuedEvents);
         }
+
+        public async Task WaitForEventsAsync(CancellationToken cancellationToken)
+        {
+            await _eventAvailableSemaphore.WaitAsync(cancellationToken);
+        }
+
     }
 }

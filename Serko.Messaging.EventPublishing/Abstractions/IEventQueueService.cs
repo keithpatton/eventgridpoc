@@ -27,5 +27,10 @@ namespace Serko.Messaging.EventPublishing.Abstractions
         /// <param name="batchSize">The maximum number of events to dequeue.</param>
         /// <returns>A collection of dequeued events.</returns>
         Task<IEnumerable<EventQueueItem>> DequeueEventsAsync(string topicName, int batchSize);
+
+        /// <summary>
+        /// Returns when there is at least one event to process
+        /// </summary>
+        Task WaitForEventsAsync(CancellationToken cancellationToken);
     }
 }

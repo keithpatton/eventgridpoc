@@ -1,13 +1,12 @@
 ﻿using Azure;
 using Azure.Identity;
 using Azure.Messaging.EventGrid.Namespaces;
-using Serko.Messaging.EventPublishing.Abstractions;
-using Serko.Messaging.EventPublishing.Options;
-using Microsoft.Extensions.Options;
-using System.Collections.Concurrent;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Serko.Messaging.EventPublishing.Model;
+using Microsoft.Extensions.Options;
+using Serko.Messaging.EventPublishing.Abstractions;
+using Serko.Messaging.EventPublishing.Options;
+using System.Collections.Concurrent;
 
 namespace Serko.Messaging.EventPublishing.Services
 {
@@ -47,13 +46,13 @@ namespace Serko.Messaging.EventPublishing.Services
             {
                 try
                 {
+                    await _eventQueueService.WaitForEventsAsync(stoppingToken);
+
                     var publishTasks = _options.Topics
                         .Select(t => t.Name)
                         .Select(PublishTopicEvents)
                         .ToList();
                     await Task.WhenAll(publishTasks);
-                    _logger.LogDebug("Waiting for {PublishingInterval} seconds before attempting to find and publish events", _options.PublishingInterval.TotalSeconds);
-                    await Task.Delay(_options.PublishingInterval, stoppingToken);
                 }
                 catch (Exception ex)
                 {
