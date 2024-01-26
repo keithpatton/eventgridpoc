@@ -1,4 +1,6 @@
+using EventGridSubscriberWebApi.Options;
 using Serko.Messaging.EventPublishing.Extensions;
+using Serko.Messaging.EventPublishing.Services;
 
 namespace EventGridPublisherWebApi
 {
@@ -15,8 +17,17 @@ namespace EventGridPublisherWebApi
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+
             // Add event grid publishing 
-            builder.Services.AddEventGridPublishing(
+
+            // SQL QUEUE (QUEUE RESILIENCE)
+            //builder.Services.Configure<SqlEventQueueServiceOptions>(builder.Configuration.GetSection("SqlEventQueueService"));
+            //builder.Services.AddEventGridPublishing<SqlEventQueueService>(
+            //    eventGridPublishingServiceOptions: opts => builder.Configuration.GetSection("EventGridPublishingService").Bind(opts)
+            //);
+
+            // MEMORY QUEUE
+            builder.Services.AddEventGridPublishing<MemoryEventQueueService>(
                 eventGridPublishingServiceOptions: opts => builder.Configuration.GetSection("EventGridPublishingService").Bind(opts)
             );
 

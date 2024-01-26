@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serko.Messaging.EventPublishing.Model;
 
 namespace Serko.Messaging.EventPublishing.Services
 {
@@ -71,13 +72,13 @@ namespace Serko.Messaging.EventPublishing.Services
         {
             try
             {
-                var topicEvents = _eventQueueService.DequeueEvents(topicName, _options.EventBatchSize).ToList();
+                var topicEvents = await _eventQueueService.DequeueEventsAsync(topicName, _options.EventBatchSize);
                 if (topicEvents.Any())
                 {
                     var client = GetOrCreateEventGridClient(topicName);
                     var cloudEvents = topicEvents.Select(eqi => eqi.CloudEvent).ToList();
                     await client.PublishCloudEventsAsync(topicName, cloudEvents);
-                    _logger.LogDebug("{Count} events published for topic '{TopicName}'.", topicEvents.Count, topicName);
+                    _logger.LogDebug("{Count} events published for topic '{TopicName}'.", topicEvents.Count(), topicName);
                 }
                 else
                 {

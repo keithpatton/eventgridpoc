@@ -25,7 +25,7 @@ namespace EventGridPublisherWebApi.Controllers
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        public async Task<IEnumerable<WeatherForecast>> Get()
         {
             var forecast = Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -38,7 +38,7 @@ namespace EventGridPublisherWebApi.Controllers
             // enqueue event for publishing via background service
             var topicName = "customisation";
             var cloudEvent = new CloudEvent(source: "EventGridPublisherApi", type: "WeatherForecastRetrieved", jsonSerializableData: JsonSerializer.Serialize(forecast));
-            _eventQueueService.EnqueueEvent(new EventQueueItem(cloudEvent, topicName));
+            await _eventQueueService.EnqueueEventAsync(new EventQueueItem(cloudEvent, topicName));
 
             return forecast;
         }

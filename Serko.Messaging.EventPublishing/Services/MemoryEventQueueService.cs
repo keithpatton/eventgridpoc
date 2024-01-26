@@ -5,23 +5,26 @@ using System.Collections.Concurrent;
 
 namespace Serko.Messaging.EventPublishing.Services
 {
-    public class EventQueueService : IEventQueueService
+    public class MemoryEventQueueService : IEventQueueService
     {
-        private readonly ILogger<EventQueueService> _logger;
+        private readonly ILogger<MemoryEventQueueService> _logger;
         private readonly ConcurrentDictionary<string, ConcurrentQueue<EventQueueItem>> _topicQueues = new();
 
-        public EventQueueService(ILogger<EventQueueService> logger)
+        public MemoryEventQueueService(ILogger<MemoryEventQueueService> logger)
         {
             _logger = logger;
         }
 
-        public void EnqueueEvent(EventQueueItem eventQueueItem)
+        public Task EnqueueEventAsync(EventQueueItem eventQueueItem)
         {
             if (eventQueueItem == null) throw new ArgumentNullException(nameof(eventQueueItem));
-            EnqueueEvents(new List<EventQueueItem> { eventQueueItem });
+            _topicQueues.GetOrAdd(eventQueueItem.TopicName, _ => new ConcurrentQueue<EventQueueItem>())
+                .Enqueue(eventQueueItem);
+            _logger.LogDebug("Event enqueued for topic {TopicName}", eventQueueItem.TopicName);
+            return Task.CompletedTask;
         }
 
-        public void EnqueueEvents(IEnumerable<EventQueueItem> eventQueueItems)
+        public Task EnqueueEventsAsync(IEnumerable<EventQueueItem> eventQueueItems)
         {
             if (eventQueueItems == null) throw new ArgumentNullException(nameof(eventQueueItems));
             foreach (var eventQueueItem in eventQueueItems)
@@ -30,9 +33,10 @@ namespace Serko.Messaging.EventPublishing.Services
                             .Enqueue(eventQueueItem);
             }
             _logger.LogDebug("{EventCount} event(s) enqueued", eventQueueItems.Count());
+            return Task.CompletedTask;
         }
 
-        public IEnumerable<EventQueueItem> DequeueEvents(string topicName, int batchSize)
+        public async Task<IEnumerable<EventQueueItem>> DequeueEventsAsync(string topicName, int batchSize)
         {
             var dequeuedEvents = new List<EventQueueItem>();
 
@@ -45,7 +49,7 @@ namespace Serko.Messaging.EventPublishing.Services
             }
 
             _logger.LogDebug("{EventCount} event(s) dequeued for {TopicName}", dequeuedEvents.Count, topicName);
-            return dequeuedEvents;
+            return await Task.FromResult(dequeuedEvents);
         }
     }
 }

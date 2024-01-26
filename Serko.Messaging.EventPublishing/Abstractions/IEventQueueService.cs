@@ -11,13 +11,13 @@ namespace Serko.Messaging.EventPublishing.Abstractions
         /// Enqueues an event into the queue associated with its topic.
         /// </summary>
         /// <param name="eventData">The event data to enqueue, containing the event and its associated topic.</param>
-        void EnqueueEvent(EventQueueItem eventQueueItem);
+        Task EnqueueEventAsync(EventQueueItem eventQueueItem);
 
         /// <summary>
         /// Enqueues multiple events into the queue associated with their topics.
         /// </summary>
         /// <param name="events">The collection of event data to enqueue, each containing an event and its associated topic.</param>
-        void EnqueueEvents(IEnumerable<EventQueueItem> eventQueueItems);
+        Task EnqueueEventsAsync(IEnumerable<EventQueueItem> eventQueueItems);
 
 
         /// <summary>
@@ -26,6 +26,6 @@ namespace Serko.Messaging.EventPublishing.Abstractions
         /// <param name="topicName">The name of the topic for which to dequeue events.</param>
         /// <param name="batchSize">The maximum number of events to dequeue.</param>
         /// <returns>A collection of dequeued events.</returns>
-        IEnumerable<EventQueueItem> DequeueEvents(string topicName, int batchSize);
+        Task<IEnumerable<EventQueueItem>> DequeueEventsAsync(string topicName, int batchSize);
     }
 }
