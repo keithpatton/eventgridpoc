@@ -1,4 +1,4 @@
-﻿namespace EventGridSubscriberWebApi.Options
+﻿namespace EventGridPublisherWebApi.Options
 {
 
     /// <summary>
@@ -13,6 +13,7 @@
         /// The connection string is required to connect to the Sql server and database.
         /// </remarks>
         public string ConnectionString { get; set; } = string.Empty;
+
     }
 
 }

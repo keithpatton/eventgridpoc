@@ -1,13 +1,12 @@
 ﻿using Dapper;
-using EventGridSubscriberWebApi.Options;
+using EventGridPublisherWebApi.Options;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Serko.Messaging.EventPublishing.Abstractions;
 using Serko.Messaging.EventPublishing.Model;
 using System.Text.Json;
 
-namespace Serko.Messaging.EventPublishing.Services
+namespace EventGridPublisherWebApi.Services
 {
     public class SqlEventQueueService : IEventQueueService
     {
@@ -60,7 +59,6 @@ namespace Serko.Messaging.EventPublishing.Services
 
             _logger.LogDebug("{EventCount} event(s) enqueued", items.Count);
         }
-
 
         public async Task<IEnumerable<EventQueueItem>> DequeueEventsAsync(string topicName, int batchSize)
         {
