@@ -1,7 +1,11 @@
 using EventGridPublisherWebApi.Options;
-using EventGridPublisherWebApi.Services;
-using Serko.Messaging.EventPublishing.Extensions;
-using Serko.Messaging.EventPublishing.Services;
+using JasperFx.Core;
+using Microsoft.Extensions.Hosting;
+using Oakton.Resources;
+using Wolverine;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.ErrorHandling;
+using Wolverine.SqlServer;
 
 namespace EventGridPublisherWebApi
 {
@@ -18,19 +22,24 @@ namespace EventGridPublisherWebApi
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            // *** Wolverine Setup Start ***
+            builder.Host.UseWolverine((context, opts) =>
+            {
+                var connectionString = context.Configuration.GetConnectionString("SqlServer");
+                opts.PersistMessagesWithSqlServer(connectionString, schema: "EventGridPublisher");
+                opts.UseEntityFrameworkCoreTransactions();
+                opts.Policies.UseDurableLocalQueues();
+            });
+            builder.Host.UseResourceSetupOnStartup();
 
-            // Add event grid publishing 
+            // Just do this if you don't want/need SQL Persistence
+            //builder.Host.UseWolverine();
 
-            // SQL QUEUE (QUEUE RESILIENCE)
-            //builder.Services.Configure<SqlEventQueueServiceOptions>(builder.Configuration.GetSection("SqlEventQueueService"));
-            //builder.Services.AddEventGridPublishing<SqlEventQueueService>(
-            //    eventGridPublishingServiceOptions: opts => builder.Configuration.GetSection("EventGridPublishingService").Bind(opts)
-            //);
+            // *** Wolverine Setup End ***
 
-            // MEMORY QUEUE
-            builder.Services.AddEventGridPublishing<MemoryEventQueueService>(
-                eventGridPublishingServiceOptions: opts => builder.Configuration.GetSection("EventGridPublishingService").Bind(opts)
-            );
+            // Add event grid publishing options
+            builder.Services.Configure<EventGridPublishingOptions>(builder.Configuration.GetSection("EventGridPublishing"));
+
 
             var app = builder.Build();
 
@@ -41,10 +50,7 @@ namespace EventGridPublisherWebApi
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
 
             app.MapControllers();
 

@@ -1,9 +1,9 @@
-﻿namespace Serko.Messaging.EventPublishing.Options
+﻿namespace EventGridPublisherWebApi.Options
 {
     /// <summary>
     /// Represents the configuration options for the EventGridPublishingService.
     /// </summary>
-    public class EventGridPublishingServiceOptions
+    public class EventGridPublishingOptions
     {
         /// <summary>
         /// Gets or sets the namespace endpoint for the Event Grid.
@@ -12,14 +12,6 @@
         /// This is the endpoint URL for your Event Grid namespace.
         /// </remarks>
         public string NamespaceEndpoint { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the batch size for event processing.
-        /// </summary>
-        /// <remarks>
-        /// Defines the number of events to publish in each batch. The default is 250.
-        /// </remarks>
-        public int EventBatchSize { get; set; } = 250;
 
 
         /// <summary>

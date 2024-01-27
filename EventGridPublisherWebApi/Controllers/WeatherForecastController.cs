@@ -1,8 +1,8 @@
 using Azure.Messaging;
+using EventGridPublisherWebApi.Handlers;
 using Microsoft.AspNetCore.Mvc;
-using Serko.Messaging.EventPublishing.Abstractions;
-using Serko.Messaging.EventPublishing.Model;
 using System.Text.Json;
+using Wolverine;
 
 namespace EventGridPublisherWebApi.Controllers
 {
@@ -16,12 +16,12 @@ namespace EventGridPublisherWebApi.Controllers
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
-        private readonly IEventQueueService _eventQueueService;
+        private readonly IMessageBus _messageBus;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, IEventQueueService eventQueueService)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IMessageBus messageBus)
         {
             _logger = logger;
-            _eventQueueService = eventQueueService;
+            _messageBus = messageBus;
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
@@ -35,10 +35,10 @@ namespace EventGridPublisherWebApi.Controllers
             })
             .ToArray();
 
-            // enqueue event for publishing via background service
-            var topicName = "customisation";
+            // Use Wolverine's Message Bus (local queue, resiliency and persistence support)
+            // BusinessEventFiredHandler handles BusinessEventFired message automatically using naming convention
             var cloudEvent = new CloudEvent(source: "EventGridPublisherApi", type: "WeatherForecastRetrieved", jsonSerializableData: JsonSerializer.Serialize(forecast));
-            await _eventQueueService.EnqueueEventAsync(new EventQueueItem(cloudEvent, topicName));
+            await _messageBus.SendAsync(new BusinessEventFired(cloudEvent, TopicName: "customisation"));
 
             return forecast;
         }

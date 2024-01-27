@@ -13,10 +13,9 @@
     <PackageReference Include="Dapper" Version="2.1.28" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0-preview5.24024.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Serko.Messaging.EventPublishing\Serko.Messaging.EventPublishing.csproj" />
+    <PackageReference Include="WolverineFx" Version="1.16.0" />
+    <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="1.16.0" />
+    <PackageReference Include="WolverineFx.SqlServer" Version="1.16.0" />
   </ItemGroup>
 
 </Project>
