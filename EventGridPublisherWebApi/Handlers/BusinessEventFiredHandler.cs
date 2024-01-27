@@ -27,7 +27,7 @@ namespace EventGridPublisherWebApi.Handlers
     public class BusinessEventFiredHandler
     {
         private readonly ILogger<BusinessEventFiredHandler> _logger;
-        private readonly ConcurrentDictionary<string, EventGridClient> _clients = new();
+        private static readonly ConcurrentDictionary<string, EventGridClient> _clients = new();
         private readonly EventGridPublishingOptions _options;
 
         /// <summary>
@@ -52,16 +52,9 @@ namespace EventGridPublisherWebApi.Handlers
         /// </remarks>
         public async Task Handle(BusinessEventFired businessEventFired)
         {
-            try
-            {
-                var client = GetOrCreateEventGridClient(businessEventFired.TopicName);
-                await client.PublishCloudEventAsync(businessEventFired.TopicName, businessEventFired.CloudEvent);
-            } 
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "A problem was encountered publishing to Event Grid");
-                throw;
-            }
+            var client = GetOrCreateEventGridClient(businessEventFired.TopicName);
+            await client.PublishCloudEventAsync(businessEventFired.TopicName, businessEventFired.CloudEvent);
+            _logger.LogDebug("Event {EventId} Successfully Published to Event Grid Topic {TopicName}", businessEventFired.CloudEvent.Id, businessEventFired.TopicName);
         }
 
         /// <summary>

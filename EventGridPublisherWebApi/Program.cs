@@ -32,7 +32,8 @@ namespace EventGridPublisherWebApi
             });
             builder.Host.UseResourceSetupOnStartup();
 
-            // Just do this if you don't want/need SQL Persistence
+            // Just do this if you don't want/need SQL Persistence 
+            // MediatR is alternative if no persistence required
             //builder.Host.UseWolverine();
 
             // *** Wolverine Setup End ***
